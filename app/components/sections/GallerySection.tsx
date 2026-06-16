@@ -101,23 +101,22 @@ export function GallerySection({
   const description = useMemo(() => tiptapToText(sectionData?.description), [sectionData?.description]);
 
   const galleryImages = useMemo<GalleryImage[]>(() => {
-    const mapped =
-      sectionData?.images
-        ?.map((image, index) => {
-          const url = image.url ? getImageSrc(image.url) : '';
-          if (!url) return null;
-          const caption = tiptapToText(image.caption);
-          return {
-            id: `gallery-${index}`,
-            imageUrl: url,
-            altText: image.altText?.trim() || caption || `Gallery image ${index + 1}`,
-            caption: caption || undefined,
-          };
-        })
-        .filter((image): image is GalleryImage => image !== null) ?? [];
+    const result: GalleryImage[] = [];
 
-    if (imagesLimit > 0) return mapped.slice(0, imagesLimit);
-    return mapped;
+    for (const [index, image] of (sectionData?.images ?? []).entries()) {
+      const url = image.url ? getImageSrc(image.url) : '';
+      if (!url) continue;
+
+      const caption = tiptapToText(image.caption);
+      result.push({
+        id: `gallery-${index}`,
+        imageUrl: url,
+        altText: image.altText?.trim() || caption || `Gallery image ${index + 1}`,
+        caption: caption || undefined,
+      });
+    }
+
+    return imagesLimit > 0 ? result.slice(0, imagesLimit) : result;
   }, [sectionData?.images, imagesLimit]);
 
   const { ref: sectionRef, isVisible } = useScrollAnimation<HTMLDivElement>({ threshold: 0.1 });
