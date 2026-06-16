@@ -4,11 +4,17 @@ import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { OptimizedImage, IMAGE_SIZES } from '@/app/components/ui/OptimizedImage';
 import type { Page } from '@/app/lib/types';
-import { getImageSrc, cn } from '@/app/lib/utils';
+import { getImageSrc } from '@/app/lib/utils';
 import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { useScrollAnimation } from '@/app/hooks/useScrollAnimation';
 import { useSectionTheme } from '@/app/hooks/useSectionTheme';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
+import {
+  CraftReveal,
+  CraftSection,
+  CRAFT_DESC_CLASS,
+  CRAFT_TITLE_CLASS,
+} from '@/app/components/sections/CraftSection';
 import { CardLoader } from '@/app/components/ui/SkeletonLoader';
 import { tiptapToText } from '@/app/lib/seo';
 
@@ -84,14 +90,17 @@ function BlogPostCard({
   post: BlogPostItem;
   showExcerpt: boolean;
 }) {
-  const { fonts } = useSectionTheme();
+  const { colors, fonts } = useSectionTheme();
   const imgSrc = getPostImageSrc(post);
   const excerpt = tiptapToText(post.excerpt);
 
   return (
     <article className="flex flex-col">
       <Link href={`/blog/${post.slug}`} className="group flex flex-col no-underline">
-        <div className="relative mb-4 aspect-[4/3] overflow-hidden rounded-lg bg-slate-100">
+        <div
+          className="relative mb-4 aspect-[4/3] overflow-hidden rounded-lg"
+          style={{ backgroundColor: colors.sectionBackgroundLight }}
+        >
           {imgSrc ? (
             <OptimizedImage
               src={imgSrc}
@@ -101,7 +110,10 @@ function BlogPostCard({
               className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             />
           ) : (
-            <div className="flex h-full items-center justify-center text-slate-300">
+            <div
+              className="flex h-full items-center justify-center"
+              style={{ color: colors.inactive }}
+            >
               <svg className="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
@@ -114,21 +126,26 @@ function BlogPostCard({
           )}
         </div>
 
-        <span className="mb-2 text-[10px] font-medium uppercase tracking-[0.32em] text-slate-400">
+        <span
+          className="mb-2 text-[10px] font-medium uppercase tracking-[0.32em]"
+          style={{ color: colors.inactive }}
+        >
           Read
         </span>
 
         {post.title && (
           <h3
-            className="mb-2 text-[clamp(1rem,1.6vw,1.2rem)] font-normal leading-snug text-slate-900 transition-colors group-hover:text-slate-600"
-            style={{ fontFamily: fonts.heading }}
+            className="mb-2 text-[clamp(1rem,1.6vw,1.2rem)] font-normal leading-snug transition-colors"
+            style={{ fontFamily: fonts.heading, color: colors.mainText }}
           >
             {post.title}
           </h3>
         )}
 
         {showExcerpt && excerpt && (
-          <p className="line-clamp-2 text-xs leading-relaxed text-slate-500">{excerpt}</p>
+          <p className="line-clamp-2 text-xs leading-relaxed" style={{ color: colors.secondaryText }}>
+            {excerpt}
+          </p>
         )}
       </Link>
     </article>
@@ -137,7 +154,7 @@ function BlogPostCard({
 
 export const BlogSection: React.FC<BlogSectionProps> = ({ blogSection, className }) => {
   const theme = useSectionTheme();
-  const { colors, fonts } = theme;
+  const { colors } = theme;
   const { blogPosts, loading, pages } = useWebBuilder();
 
   const sectionData = useMemo(() => {
@@ -177,69 +194,66 @@ export const BlogSection: React.FC<BlogSectionProps> = ({ blogSection, className
 
   if (loading && blogPosts.length === 0) {
     return (
-      <section
-        className={cn('relative pt-12 lg:pt-16 pb-8 lg:pb-10', className)}
-        id="blog"
-        style={{ backgroundColor: colors.pageBackground, fontFamily: fonts.body }}
-      >
-        <div className="container mx-auto px-6 lg:px-12">
-          <div className="mb-8 lg:mb-10 max-w-3xl space-y-4">
-            <div className="h-3 w-24 animate-pulse rounded bg-slate-200" />
-            <div className="h-8 w-2/3 max-w-md animate-pulse rounded bg-slate-200" />
-            <div className="h-4 w-full max-w-sm animate-pulse rounded bg-slate-200" />
+      <CraftSection id="blog" surface="page" className={className}>
+        <div className="mb-8 lg:mb-10 max-w-3xl space-y-4">
+            <div
+              className="h-3 w-24 animate-pulse rounded"
+              style={{ backgroundColor: colors.sectionBackgroundLight }}
+            />
+            <div
+              className="h-8 w-2/3 max-w-md animate-pulse rounded"
+              style={{ backgroundColor: colors.sectionBackgroundLight }}
+            />
+            <div
+              className="h-4 w-full max-w-sm animate-pulse rounded"
+              style={{ backgroundColor: colors.sectionBackgroundLight }}
+            />
           </div>
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-4">
-                <div className="aspect-[4/3] animate-pulse rounded-lg bg-slate-200" />
+                <div
+                  className="aspect-[4/3] animate-pulse rounded-lg"
+                  style={{ backgroundColor: colors.sectionBackgroundLight }}
+                />
                 <CardLoader />
               </div>
             ))}
           </div>
-        </div>
-      </section>
+      </CraftSection>
     );
   }
 
   if (displayPosts.length === 0 && !hasTitle && !hasDescription) return null;
 
   return (
-    <section
-      id="blog"
-      className={cn('relative pt-12 lg:pt-16 pb-8 lg:pb-10', className)}
-      style={{ backgroundColor: colors.pageBackground, fontFamily: fonts.body }}
-    >
-      <div className="container mx-auto px-6 lg:px-12">
-        {(hasTitle || hasDescription) && (
-          <div
-            ref={headerRef}
-            className={cn(
-              'mb-8 lg:mb-10 max-w-3xl transition-all duration-1000',
-              headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            )}
-          >
+    <CraftSection id="blog" surface="page" className={className}>
+      {(hasTitle || hasDescription) && (
+        <CraftReveal visible={headerVisible} className="mb-8 lg:mb-10 max-w-3xl">
+          <div ref={headerRef}>
             <SectionHeading
               eyebrow="Blogs"
               title={title}
               description={description}
-              descriptionClassName="max-w-2xl"
+              titleClassName={CRAFT_TITLE_CLASS}
+              descriptionClassName={CRAFT_DESC_CLASS}
             />
           </div>
-        )}
+        </CraftReveal>
+      )}
 
-        {displayPosts.length === 0 ? (
-          <p className="text-center text-sm text-slate-500">
-            No published posts yet. Add posts in the builder to show them here.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-            {(displayPosts as BlogPostItem[]).map((post) => (
-              <BlogPostCard key={post._id} post={post} showExcerpt={showExcerpt} />
-            ))}
-          </div>
-        )}
-      </div>
-    </section>
+      {displayPosts.length === 0 ? (
+        <p className="text-center text-sm" style={{ color: colors.secondaryText }}>
+          No published posts yet. Add posts in the builder to show them here.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+          {(displayPosts as BlogPostItem[]).map((post) => (
+            <BlogPostCard key={post._id} post={post} showExcerpt={showExcerpt} />
+          ))}
+        </div>
+      )}
+    </CraftSection>
   );
 };
 

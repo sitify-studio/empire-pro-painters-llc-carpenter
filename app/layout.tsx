@@ -8,6 +8,7 @@ import { LenisProvider } from '@/app/components/cinematic/LenisProvider'
 import { AmbientFoundation } from '@/app/components/cinematic/AmbientFoundation'
 import { HeroIntroProvider } from '@/app/providers/HeroIntroProvider'
 import { Header } from '@/app/components/layout/Header'
+import { Main } from '@/app/components/layout/Main'
 
 export const metadata: Metadata = {
   title: 'Web Builder Site',
@@ -30,9 +31,7 @@ export default function RootLayout({
                 <HeroIntroProvider>
                   <ThemeFontWrapper>
                     <Header />
-                    <main className="relative z-10 min-h-screen pt-14">
-                      {children}
-                    </main>
+                    <Main>{children}</Main>
                   </ThemeFontWrapper>
                 </HeroIntroProvider>
               </LenisProvider>

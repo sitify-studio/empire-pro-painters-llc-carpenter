@@ -6,10 +6,9 @@ import { Footer } from '@/app/components/layout/Footer';
 import { HeroSection } from '@/app/components/sections/HeroSection';
 import { ServicesSection } from '@/app/components/sections/ServicesSection';
 import { getThemeColors } from '@/app/lib/themeBuilder';
-import { PageContentLoader } from '@/app/components/ui/PageContentLoader';
 
 export default function ServicesPage() {
-  const { site, pages, loading, error } = useWebBuilder();
+  const { site, pages, error } = useWebBuilder();
 
   const themeColors = getThemeColors(site);
 
@@ -18,10 +17,6 @@ export default function ServicesPage() {
     heading: site?.theme?.headingFont,
     body: site?.theme?.bodyFont,
   };
-
-  if (loading) {
-    return <PageContentLoader />;
-  }
 
   if (error && !site) {
     return (

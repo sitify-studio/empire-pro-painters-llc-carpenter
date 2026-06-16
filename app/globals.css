@@ -408,10 +408,19 @@ html.preloader-active::-webkit-scrollbar-thumb {
   will-change: clip-path;
 }
 
+.editorial-reveal-mask--open {
+  clip-path: inset(0% 0% 0% 0%);
+  -webkit-clip-path: inset(0% 0% 0% 0%);
+}
+
 .editorial-reveal-inner {
   transform: translate3d(0, -12%, 0) scale(1.3);
   transform-origin: center center;
   will-change: transform;
+}
+
+.editorial-reveal-inner--static {
+  transform: none;
 }
 
 .editorial-reveal-float {

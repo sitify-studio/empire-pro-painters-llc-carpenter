@@ -1,21 +1,20 @@
 'use client';
 
 import { memo, useRef } from 'react';
-import { cn } from '@/app/lib/utils';
 import { OptimizedImage } from '@/app/components/ui/OptimizedImage';
 import {
   useEditorialCinematicReveal,
   useEditorialImageHover,
 } from '@/app/hooks/useEditorialCinematicReveal';
 import { refreshScrollLayout } from '@/app/lib/gsap-scroll';
+import { cn } from '@/app/lib/utils';
 
 const GRAIN_SVG =
   'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27200%27 height=%27200%27 viewBox=%270 0 200 200%27%3E%3Cfilter id=%27n%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%270.85%27 numOctaves=%274%27 stitchTiles=%27stitch%27/%3E%3C/filter%3E%3Crect width=%27200%27 height=%27200%27 filter=%27url(%23n)%27 opacity=%271%27/%3E%3C/svg%3E")';
 
-export type EditorialScrollRevealImageProps = {
+export type ParallaxRevealImageProps = {
   src: string;
   alt?: string;
-  hudLabel?: string | null;
   aspectClassName?: string;
   className?: string;
   imageClassName?: string;
@@ -25,16 +24,25 @@ export type EditorialScrollRevealImageProps = {
   start?: string;
   end?: string;
   enabled?: boolean;
+  /** Fill parent (full-bleed backgrounds). */
+  fill?: boolean;
+  /** Subtle film grain overlay. */
+  grain?: boolean;
+  hover?: boolean;
+  /** Mask clip-path scroll reveal. Disable for full-bleed backgrounds (CTA, hero). */
+  reveal?: boolean;
+  initialScale?: number;
+  initialYPercent?: number;
+  microParallaxYPercent?: number;
 };
 
 /**
- * Reusable editorial image: scroll clip-path reveal + inner parallax + grain + HUD.
- * Initial transform/clip live in CSS — GSAP owns inline styles after mount (no React style reset).
+ * Parallax reveal: mask clip-path opens on scroll while the image layer
+ * drifts at a different rate — classic editorial depth effect.
  */
-export const EditorialScrollRevealImage = memo(function EditorialScrollRevealImage({
+export const ParallaxRevealImage = memo(function ParallaxRevealImage({
   src,
   alt = '',
-  hudLabel,
   aspectClassName = 'aspect-[4/5]',
   className,
   imageClassName,
@@ -44,7 +52,14 @@ export const EditorialScrollRevealImage = memo(function EditorialScrollRevealIma
   start = 'top 92%',
   end = 'bottom 15%',
   enabled = true,
-}: EditorialScrollRevealImageProps) {
+  fill = false,
+  grain = true,
+  hover = true,
+  reveal = true,
+  initialScale = 1.28,
+  initialYPercent = -10,
+  microParallaxYPercent = 10,
+}: ParallaxRevealImageProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const maskRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
@@ -52,6 +67,7 @@ export const EditorialScrollRevealImage = memo(function EditorialScrollRevealIma
 
   useEditorialCinematicReveal({
     enabled: enabled && Boolean(src),
+    reveal,
     triggerRef: wrapperRef,
     maskRef,
     imageRef,
@@ -59,27 +75,35 @@ export const EditorialScrollRevealImage = memo(function EditorialScrollRevealIma
     scrub,
     start,
     end,
+    initialScale,
+    initialYPercent,
+    microParallaxYPercent,
   });
 
-  useEditorialImageHover(maskRef, floatRef, enabled && Boolean(src));
+  useEditorialImageHover(maskRef, floatRef, hover && enabled && Boolean(src));
 
   if (!src) return null;
 
   return (
-    <div ref={wrapperRef} className={cn('relative w-full', className)}>
+    <div
+      ref={wrapperRef}
+      className={cn(fill ? 'absolute inset-0 h-full w-full' : 'relative w-full', className)}
+    >
       <div
         ref={maskRef}
         className={cn(
-          'editorial-reveal-mask group relative w-full overflow-hidden bg-zinc-100',
-          'shadow-[0_24px_80px_rgba(0,0,0,0.08)]',
-          aspectClassName,
+          'group relative w-full overflow-hidden',
+          reveal ? 'editorial-reveal-mask bg-zinc-900/20' : 'editorial-reveal-mask--open',
+          fill ? 'absolute inset-0 h-full' : aspectClassName,
+          !fill && 'shadow-[0_24px_80px_rgba(0,0,0,0.08)]'
         )}
       >
         <div
           ref={imageRef}
           className={cn(
-            'editorial-reveal-inner absolute inset-0 h-[120%] w-full -top-[10%] will-change-transform',
-            imageClassName,
+            'editorial-reveal-inner absolute inset-0 h-[125%] w-full -top-[12%] will-change-transform',
+            !reveal && 'editorial-reveal-inner--static',
+            imageClassName
           )}
         >
           <div
@@ -98,18 +122,16 @@ export const EditorialScrollRevealImage = memo(function EditorialScrollRevealIma
           </div>
         </div>
 
-        {hudLabel ? (
-          <div className="pointer-events-none absolute right-0 top-0 z-10 bg-zinc-900 px-3 py-1.5 font-mono text-[9px] uppercase tracking-[0.25em] text-white opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-            {hudLabel}
-          </div>
+        {grain ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] opacity-[0.05] mix-blend-overlay"
+            style={{ backgroundImage: GRAIN_SVG }}
+            aria-hidden
+          />
         ) : null}
-
-        <div
-          className="pointer-events-none absolute inset-0 z-[1] opacity-[0.04] mix-blend-overlay"
-          style={{ backgroundImage: GRAIN_SVG }}
-          aria-hidden
-        />
       </div>
     </div>
   );
 });
+
+export default ParallaxRevealImage;

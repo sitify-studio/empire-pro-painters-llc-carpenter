@@ -196,11 +196,11 @@ function useEditorialTypeClasses() {
     sansStyle,
     scriptStyle,
     sansClass:
-      'hero-editorial-sans text-[clamp(3.5rem,8.5vw,9rem)] leading-[0.88] tracking-[-0.04em] text-[color:var(--wb-text-main,#09090b)]',
+      'hero-editorial-sans text-[clamp(3.5rem,8.5vw,9rem)] leading-[0.88] tracking-[-0.04em] text-[color:var(--wb-text-main)]',
     scriptClass:
-      'hero-editorial-script text-[clamp(4.25rem,10vw,11.5rem)] leading-[0.8] tracking-normal text-[color:var(--wb-text-main,#09090b)]',
+      'hero-editorial-script text-[clamp(4.25rem,10vw,11.5rem)] leading-[0.8] tracking-normal text-[color:var(--wb-text-main)]',
     scriptGlyphClass:
-      'hero-editorial-script text-[clamp(4.75rem,11vw,12.5rem)] leading-[0.78] text-[color:var(--wb-text-main,#09090b)]',
+      'hero-editorial-script text-[clamp(4.75rem,11vw,12.5rem)] leading-[0.78] text-[color:var(--wb-text-main)]',
   };
 }
 

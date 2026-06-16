@@ -6,6 +6,15 @@ import { useScrollAnimation, useStaggeredAnimation } from '@/app/hooks/useScroll
 import { useSectionTheme } from '@/app/hooks/useSectionTheme';
 import { tiptapToText } from '@/app/lib/seo';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
+import {
+  CraftIndex,
+  CraftReveal,
+  CraftRule,
+  CraftSection,
+  CRAFT_DESC_CLASS,
+  CRAFT_TITLE_CLASS,
+  useCraftTheme,
+} from '@/app/components/sections/CraftSection';
 import { cn } from '@/app/lib/utils';
 
 interface FAQSectionProps {
@@ -21,6 +30,8 @@ function FaqItem({
   visible,
   accentColor,
   fonts,
+  colors,
+  borderColor,
   onToggle,
 }: {
   question: string;
@@ -30,15 +41,17 @@ function FaqItem({
   visible: boolean;
   accentColor: string;
   fonts: ReturnType<typeof useSectionTheme>['fonts'];
+  colors: ReturnType<typeof useSectionTheme>['colors'];
+  borderColor: string;
   onToggle: () => void;
 }) {
   return (
     <div
       className={cn(
-        'border-t border-slate-200 transition-all duration-700',
+        'border-t transition-all duration-700',
         visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
       )}
-      style={{ transitionDelay: `${index * 60}ms` }}
+      style={{ transitionDelay: `${index * 60}ms`, borderColor }}
     >
       <button
         type="button"
@@ -47,24 +60,15 @@ function FaqItem({
         aria-expanded={isOpen}
       >
         <div className="mt-1 flex shrink-0 items-center gap-3">
-          <span
-            className="text-[10px] font-bold uppercase tracking-[0.35em]"
-            style={{ color: accentColor }}
-          >
-            {String(index + 1).padStart(2, '0')}
-          </span>
-          <div className="hidden h-px w-6 sm:block" style={{ backgroundColor: `${accentColor}40` }} />
+          <CraftIndex index={index} />
+          <CraftRule className="hidden w-6 sm:block" />
         </div>
 
         <span className="min-w-0 flex-grow">
           {question && (
             <h3
-              className={cn(
-                'text-base font-normal tracking-tight text-slate-900 transition-colors sm:text-lg',
-                'group-hover:text-slate-600',
-                isOpen && 'text-slate-900'
-              )}
-              style={{ fontFamily: fonts.heading }}
+              className="text-base font-normal tracking-tight transition-colors sm:text-lg"
+              style={{ fontFamily: fonts.heading, color: colors.mainText }}
             >
               {question}
             </h3>
@@ -77,7 +81,10 @@ function FaqItem({
                 isOpen ? 'mt-4 max-h-96 opacity-100' : 'max-h-0 opacity-0'
               )}
             >
-              <p className="max-w-2xl text-sm font-light leading-relaxed text-slate-600 sm:text-base">
+              <p
+                className="max-w-2xl text-sm font-light leading-relaxed sm:text-base"
+                style={{ color: colors.secondaryText }}
+              >
                 {answer}
               </p>
             </div>
@@ -85,8 +92,8 @@ function FaqItem({
         </span>
 
         <span
-          className="mt-1 shrink-0 text-lg font-light leading-none text-slate-400 transition-colors duration-300 group-hover:text-slate-900"
-          style={{ color: isOpen ? accentColor : undefined }}
+          className="mt-1 shrink-0 text-lg font-light leading-none transition-colors duration-300"
+          style={{ color: isOpen ? accentColor : colors.inactive }}
           aria-hidden
         >
           {isOpen ? '−' : '+'}
@@ -97,8 +104,7 @@ function FaqItem({
 }
 
 export function FAQSection({ faqSection, className }: FAQSectionProps) {
-  const theme = useSectionTheme();
-  const { colors, fonts } = theme;
+  const { colors, fonts, accentColor, borderColor } = useCraftTheme();
 
   const title = useMemo(() => tiptapToText(faqSection?.title), [faqSection?.title]);
   const description = useMemo(() => tiptapToText(faqSection?.description), [faqSection?.description]);
@@ -120,65 +126,48 @@ export function FAQSection({ faqSection, className }: FAQSectionProps) {
   if (!faqSection || faqSection.enabled === false) return null;
   if (!title && !description && questions.length === 0) return null;
 
-  const accentColor = colors.primaryButton;
-
   const toggleQuestion = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
   return (
-    <section
-      id="faq"
-      className={cn('relative overflow-hidden bg-[#fcfcfc] pt-12 pb-8 lg:pt-16 lg:pb-10', className)}
-    >
-      <div
-        className="pointer-events-none absolute -right-16 top-1/4 h-72 w-72 rounded-full blur-3xl opacity-20"
-        style={{ backgroundColor: accentColor }}
-      />
-      <div
-        className="pointer-events-none absolute -left-20 bottom-0 h-64 w-64 rounded-full blur-[100px] opacity-15"
-        style={{ backgroundColor: accentColor }}
-      />
-
-      <div className="container relative z-10 mx-auto px-6 lg:px-12">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
-          <div
-            ref={titleRef}
-            className={cn(
-              'lg:col-span-4 lg:sticky lg:top-24 lg:self-start transition-all duration-1000',
-              titleVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-            )}
-          >
+    <CraftSection id="faq" surface="page" className={className}>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
+        <CraftReveal visible={titleVisible} className="lg:col-span-4 lg:sticky lg:top-24 lg:self-start">
+          <div ref={titleRef}>
             <SectionHeading
               eyebrow="Information"
               title={title}
               description={description}
-              descriptionClassName="max-w-sm"
+              titleClassName={CRAFT_TITLE_CLASS}
+              descriptionClassName={cn(CRAFT_DESC_CLASS, 'max-w-sm')}
             />
           </div>
+        </CraftReveal>
 
-          {questions.length > 0 && (
-            <div ref={faqRef} className="lg:col-span-8">
-              <div className="border-b border-slate-200">
-                {questions.map((faq, index) => (
-                  <FaqItem
-                    key={index}
-                    question={faq.question}
-                    answer={faq.answer}
-                    index={index}
-                    isOpen={openIndex === index}
-                    visible={faqVisible.includes(index)}
-                    accentColor={accentColor}
-                    fonts={fonts}
-                    onToggle={() => toggleQuestion(index)}
-                  />
-                ))}
-              </div>
+        {questions.length > 0 && (
+          <div ref={faqRef} className="lg:col-span-8">
+            <div className="border-b" style={{ borderColor }}>
+              {questions.map((faq, index) => (
+                <FaqItem
+                  key={index}
+                  question={faq.question}
+                  answer={faq.answer}
+                  index={index}
+                  isOpen={openIndex === index}
+                  visible={faqVisible.includes(index)}
+                  accentColor={accentColor}
+                  fonts={fonts}
+                  colors={colors}
+                  borderColor={borderColor}
+                  onToggle={() => toggleQuestion(index)}
+                />
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </section>
+    </CraftSection>
   );
 }
 

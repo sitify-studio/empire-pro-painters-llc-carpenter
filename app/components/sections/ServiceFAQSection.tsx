@@ -114,12 +114,14 @@ export const ServiceFAQSection: React.FC<ServiceFAQSectionProps> = ({ service })
                                             <div
                                                 className={cn(
                                                     "shrink-0 ml-4 transition-all duration-500 rounded-full w-10 md:w-12 h-10 md:h-12 flex items-center justify-center border",
-                                                    isOpen ? "rotate-180 border-transparent shadow-lg text-white" : "border-black/10 group-hover:border-black/30"
+                                                    isOpen ? "rotate-180 border-transparent shadow-lg" : "group-hover:opacity-80"
                                                 )}
                                                 style={{
-                                                    color: isOpen ? '#FFFFFF' : themeColors.mainText,
+                                                    color: isOpen ? themeColors.darkPrimaryText : themeColors.mainText,
                                                     backgroundColor: isOpen ? brandColor : 'transparent',
-                                                    borderColor: isOpen ? brandColor : undefined
+                                                    borderColor: isOpen
+                                                      ? brandColor
+                                                      : `color-mix(in srgb, ${themeColors.mainText} 10%, transparent)`,
                                                 }}
                                             >
                                                 {isOpen ? <Minus strokeWidth={1} size={18} /> : <Plus strokeWidth={1} size={18} />}

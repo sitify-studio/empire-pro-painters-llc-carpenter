@@ -8,6 +8,11 @@ import { cn, getImageSrc } from '@/app/lib/utils';
 import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { useSectionTheme } from '@/app/hooks/useSectionTheme';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
+import {
+  CraftSection,
+  CRAFT_DESC_CLASS,
+  CRAFT_TITLE_CLASS,
+} from '@/app/components/sections/CraftSection';
 import { tiptapToText } from '@/app/lib/seo';
 
 interface ProjectsSectionProps {
@@ -72,7 +77,7 @@ function ProjectGalleryItem({
   item: DisplayItem;
   index: number;
 }) {
-  const { fonts } = useSectionTheme();
+  const { colors, fonts } = useSectionTheme();
   const imageUrl = projectImageUrl(item);
   const href = projectHref(item);
   const title = projectTitle(item);
@@ -81,7 +86,10 @@ function ProjectGalleryItem({
   const content = (
     <article className="group w-full">
       {imageUrl && (
-        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+        <div
+          className="relative aspect-[4/3] overflow-hidden"
+          style={{ backgroundColor: colors.sectionBackgroundLight }}
+        >
           <OptimizedImage
             src={imageUrl}
             alt={title || 'Project'}
@@ -93,13 +101,16 @@ function ProjectGalleryItem({
       )}
 
       <div className="mt-4 flex items-center justify-between gap-4">
-        <span className="text-[10px] font-medium uppercase tracking-[0.35em] text-slate-400">
+        <span
+          className="text-[10px] font-medium uppercase tracking-[0.35em]"
+          style={{ color: colors.inactive }}
+        >
           {String(index + 1).padStart(2, '0')}
         </span>
         {href && (
           <span
-            className="text-[10px] font-medium uppercase tracking-[0.35em] text-slate-900 transition-opacity group-hover:opacity-60"
-            style={{ fontFamily: fonts.body }}
+            className="text-[10px] font-medium uppercase tracking-[0.35em] transition-opacity group-hover:opacity-60"
+            style={{ fontFamily: fonts.body, color: colors.mainText }}
           >
             View
           </span>
@@ -108,8 +119,8 @@ function ProjectGalleryItem({
 
       {title && (
         <h3
-          className="mt-2 text-sm font-normal leading-snug text-slate-900"
-          style={{ fontFamily: fonts.heading }}
+          className="mt-2 text-sm font-normal leading-snug"
+          style={{ fontFamily: fonts.heading, color: colors.mainText }}
         >
           {title}
         </h3>
@@ -180,44 +191,35 @@ export const ProjectsSection: React.FC<ProjectsSectionProps> = ({
   if (display.length === 0 && !hasContent) return null;
 
   return (
-    <section
-      id="projects"
-      className={cn('relative bg-white py-16 sm:py-20 lg:py-24', className)}
-      style={{ fontFamily: fonts.body, color: colors.mainText }}
-    >
-      <div className="mx-auto max-w-7xl px-6 lg:px-12">
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
-          {/* Sticky left content */}
-          <div className="lg:col-span-5">
-            <div className="flex flex-col lg:sticky lg:top-24 lg:min-h-[calc(100vh-7rem)]">
-              {hasContent && (
-                <SectionHeading
-                  eyebrow="Projects"
-                  title={sectionTitle}
-                  description={sectionDescription}
-                  descriptionClassName="max-w-2xl"
-                />
-              )}
-            </div>
-          </div>
+    <CraftSection id="projects" surface="muted" accentLine className={cn('overflow-visible', className)}>
+      <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+        <div className="lg:col-span-5 lg:sticky lg:top-24 lg:self-start">
+          {hasContent && (
+            <SectionHeading
+              eyebrow="Projects"
+              title={sectionTitle}
+              description={sectionDescription}
+              titleClassName={CRAFT_TITLE_CLASS}
+              descriptionClassName={CRAFT_DESC_CLASS}
+            />
+          )}
+        </div>
 
-          {/* Scrollable right gallery */}
-          <div className="lg:col-span-7">
-            {display.length > 0 ? (
-              <div className="flex flex-col gap-14 sm:gap-16 lg:gap-20">
-                {display.map((item, index) => (
-                  <ProjectGalleryItem key={isProjectEntity(item) ? item._id : index} item={item} index={index} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500">
-                No published projects yet. Add projects in the builder to show them here.
-              </p>
-            )}
-          </div>
+        <div className="lg:col-span-7">
+          {display.length > 0 ? (
+            <div className="flex flex-col gap-12 sm:gap-14 lg:gap-16">
+              {display.map((item, index) => (
+                <ProjectGalleryItem key={isProjectEntity(item) ? item._id : index} item={item} index={index} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: colors.secondaryText }}>
+              No published projects yet. Add projects in the builder to show them here.
+            </p>
+          )}
         </div>
       </div>
-    </section>
+    </CraftSection>
   );
 };
 

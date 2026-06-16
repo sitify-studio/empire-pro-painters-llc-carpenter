@@ -7,6 +7,8 @@ import { useLenis } from '@/app/components/cinematic/LenisProvider';
 
 export type EditorialCinematicRevealOptions = {
   enabled?: boolean;
+  /** When false, image is always visible; only parallax runs (full-bleed backgrounds). */
+  reveal?: boolean;
   triggerRef: RefObject<HTMLElement | null>;
   maskRef: RefObject<HTMLElement | null>;
   imageRef: RefObject<HTMLElement | null>;
@@ -25,6 +27,7 @@ export type EditorialCinematicRevealOptions = {
  */
 export function useEditorialCinematicReveal({
   enabled = true,
+  reveal = true,
   triggerRef,
   maskRef,
   imageRef,
@@ -46,8 +49,8 @@ export function useEditorialCinematicReveal({
     const float = floatRef?.current ?? null;
     if (!enabled || !trigger || !mask || !image) return;
 
-    /* Lenis + scrollerProxy must exist before ScrollTriggers are created. */
-    if (!reducedMotion && !lenis) return;
+    /* Lenis + scrollerProxy must exist before scrub reveal; parallax-only can init immediately. */
+    if (!reducedMotion && reveal && !lenis) return;
 
     ensureGsapScroll();
 
@@ -61,18 +64,31 @@ export function useEditorialCinematicReveal({
       return;
     }
 
-    gsap.set(mask, {
-      clipPath: 'inset(100% 0% 0% 0%)',
-      WebkitClipPath: 'inset(100% 0% 0% 0%)',
-      force3D: true,
-    });
+    if (!reveal) {
+      gsap.set(mask, {
+        clipPath: 'inset(0% 0% 0% 0%)',
+        WebkitClipPath: 'inset(0% 0% 0% 0%)',
+      });
+      gsap.set(image, {
+        scale: 1,
+        yPercent: initialYPercent,
+        transformOrigin: 'center center',
+        force3D: true,
+      });
+    } else {
+      gsap.set(mask, {
+        clipPath: 'inset(100% 0% 0% 0%)',
+        WebkitClipPath: 'inset(100% 0% 0% 0%)',
+        force3D: true,
+      });
 
-    gsap.set(image, {
-      scale: initialScale,
-      yPercent: initialYPercent,
-      transformOrigin: 'center center',
-      force3D: true,
-    });
+      gsap.set(image, {
+        scale: initialScale,
+        yPercent: initialYPercent,
+        transformOrigin: 'center center',
+        force3D: true,
+      });
+    }
 
     if (float) {
       gsap.set(float, { yPercent: 0, force3D: true });
@@ -82,41 +98,43 @@ export function useEditorialCinematicReveal({
       typeof document !== 'undefined' ? document.documentElement : undefined;
 
     const ctx = gsap.context(() => {
-      const revealTl = gsap.timeline({
-        scrollTrigger: {
-          trigger,
-          scroller,
-          start,
-          end,
-          scrub,
-          invalidateOnRefresh: true,
-        },
-      });
+      if (reveal) {
+        const revealTl = gsap.timeline({
+          scrollTrigger: {
+            trigger,
+            scroller,
+            start,
+            end,
+            scrub,
+            invalidateOnRefresh: true,
+          },
+        });
 
-      revealTl.to(
-        mask,
-        {
-          clipPath: 'inset(0% 0% 0% 0%)',
-          WebkitClipPath: 'inset(0% 0% 0% 0%)',
-          ease: 'none',
-        },
-        0,
-      );
+        revealTl.to(
+          mask,
+          {
+            clipPath: 'inset(0% 0% 0% 0%)',
+            WebkitClipPath: 'inset(0% 0% 0% 0%)',
+            ease: 'none',
+          },
+          0,
+        );
 
-      revealTl.to(
-        image,
-        {
-          scale: 1,
-          yPercent: 0,
-          ease: 'none',
-        },
-        0,
-      );
+        revealTl.to(
+          image,
+          {
+            scale: 1,
+            yPercent: 0,
+            ease: 'none',
+          },
+          0,
+        );
+      }
 
       const microTarget = float ?? image;
       gsap.fromTo(
         microTarget,
-        { yPercent: 0 },
+        { yPercent: reveal ? 0 : initialYPercent },
         {
           yPercent: microParallaxYPercent,
           ease: 'none',
@@ -144,6 +162,7 @@ export function useEditorialCinematicReveal({
     };
   }, [
     enabled,
+    reveal,
     reducedMotion,
     lenis,
     triggerRef,

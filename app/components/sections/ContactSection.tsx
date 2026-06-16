@@ -5,9 +5,15 @@ import type { Page, BusinessHours } from '@/app/lib/types';
 import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { cn } from '@/app/lib/utils';
 import { useScrollAnimation } from '@/app/hooks/useScrollAnimation';
-import { useSectionTheme } from '@/app/hooks/useSectionTheme';
 import { tiptapToText } from '@/app/lib/seo';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
+import {
+  CraftReveal,
+  CraftSection,
+  CRAFT_DESC_CLASS,
+  CRAFT_TITLE_CLASS,
+  useCraftTheme,
+} from '@/app/components/sections/CraftSection';
 import { ContactSideForm } from '@/app/components/ui/ContactSideForm';
 
 const DAY_LABELS: Record<string, string> = {
@@ -28,8 +34,7 @@ interface ContactSectionProps {
 export function ContactSection({ contactSection, className }: ContactSectionProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { site } = useWebBuilder();
-  const theme = useSectionTheme();
-  const { colors } = theme;
+  const { colors, accentColor, borderColor } = useCraftTheme();
 
   const title = useMemo(() => tiptapToText(contactSection?.title), [contactSection?.title]);
   const description = useMemo(
@@ -77,27 +82,21 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
     .join(', ');
 
   const mapQuery = addressLine;
-  const accentColor = colors.primaryButton;
   const hasHours = businessHours?.isEnabled && businessHours.hours.length > 0;
   const hasRightColumn =
     showContactInfo && Boolean(business?.email || business?.phone || addressLine || hasHours);
 
   return (
-    <section id="contact" className={cn('relative overflow-hidden bg-[#fcfcfc] py-20 lg:py-28', className)}>
-      <div className="container mx-auto px-6 lg:px-12">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-16">
-          <div
-            ref={headerRef}
-            className={cn(
-              'lg:col-span-5 transition-all duration-1000',
-              headerVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            )}
-          >
+    <CraftSection id="contact" surface="muted" className={className}>
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-16">
+        <CraftReveal visible={headerVisible} className="lg:col-span-5">
+          <div ref={headerRef}>
             <SectionHeading
               eyebrow="Contact"
               title={title || 'Get in touch'}
               description={description}
-              descriptionClassName="max-w-md"
+              titleClassName={CRAFT_TITLE_CLASS}
+              descriptionClassName={cn(CRAFT_DESC_CLASS, 'max-w-md')}
             />
 
             {showForm && (
@@ -106,7 +105,10 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
                 onClick={() => setIsFormOpen(true)}
                 className="group mt-10 inline-flex items-center gap-4"
               >
-                <span className="text-[11px] font-bold uppercase tracking-[0.3em] text-slate-900">
+                <span
+                  className="text-[11px] font-bold uppercase tracking-[0.3em]"
+                  style={{ color: colors.mainText }}
+                >
                   Send a Message
                 </span>
                 <div
@@ -116,19 +118,18 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
               </button>
             )}
           </div>
+        </CraftReveal>
 
-          {hasRightColumn && (
-            <div
-              ref={contentRef}
-              className={cn(
-                'lg:col-span-7 border-t border-slate-200 pt-8 transition-all duration-1000 delay-150',
-                contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              )}
-            >
+        {hasRightColumn && (
+          <CraftReveal visible={contentVisible} className="lg:col-span-7" delayMs={150}>
+            <div ref={contentRef} className="border-t pt-8" style={{ borderColor }}>
               {showContactInfo && business?.email && (
                 <a
                   href={`mailto:${business.email}`}
-                  className="text-sm font-light text-slate-600 transition-colors hover:text-slate-900"
+                  className="text-sm font-light transition-colors"
+                  style={{ color: colors.secondaryText }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = colors.mainText; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = colors.secondaryText; }}
                 >
                   {business.email}
                 </a>
@@ -138,16 +139,22 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
                 <a
                   href={`tel:${business.phone.replace(/\s/g, '')}`}
                   className={cn(
-                    'block text-sm font-light text-slate-600 transition-colors hover:text-slate-900',
+                    'block text-sm font-light transition-colors',
                     business?.email && 'mt-3'
                   )}
+                  style={{ color: colors.secondaryText }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = colors.mainText; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = colors.secondaryText; }}
                 >
                   {business.phone}
                 </a>
               )}
 
               {showContactInfo && addressLine && (
-                <p className={cn('text-sm font-light leading-relaxed text-slate-600', (business?.email || business?.phone) && 'mt-3')}>
+                <p
+                  className={cn('text-sm font-light leading-relaxed', (business?.email || business?.phone) && 'mt-3')}
+                  style={{ color: colors.secondaryText }}
+                >
                   {addressLine}
                 </p>
               )}
@@ -155,8 +162,9 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
               {hasHours && (
                 <div
                   className={cn(
-                    (business?.email || business?.phone || addressLine) && 'mt-8 border-t border-slate-200 pt-8'
+                    (business?.email || business?.phone || addressLine) && 'mt-8 border-t pt-8'
                   )}
+                  style={{ borderColor }}
                 >
                   <span
                     className="mb-6 block text-[10px] font-bold uppercase tracking-[0.35em]"
@@ -168,9 +176,10 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
                     {businessHours.hours.map((day) => (
                       <div
                         key={day.day}
-                        className="flex justify-between gap-8 text-sm font-light text-slate-600"
+                        className="flex justify-between gap-8 text-sm font-light"
+                        style={{ color: colors.secondaryText }}
                       >
-                        <span className="text-slate-900">{DAY_LABELS[day.day]}</span>
+                        <span style={{ color: colors.mainText }}>{DAY_LABELS[day.day]}</span>
                         <span>{formatDayHours(day)}</span>
                       </div>
                     ))}
@@ -178,15 +187,19 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </CraftReveal>
+        )}
+      </div>
 
-        {showMap && (
+      {showMap && (
+        <CraftReveal
+          visible={contentVisible}
+          className="relative mt-12 lg:mt-16"
+          delayMs={200}
+        >
           <div
-            className={cn(
-              'relative mt-12 lg:mt-16 h-[280px] sm:h-[320px] lg:h-[360px] w-full overflow-hidden border border-slate-200 transition-all duration-1000 delay-200',
-              contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            )}
+            className="h-[280px] w-full overflow-hidden border sm:h-[320px] lg:h-[360px]"
+            style={{ borderColor }}
           >
             {site?.business?.coordinates?.latitude != null &&
             site?.business?.coordinates?.longitude != null ? (
@@ -210,16 +223,19 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
                 loading="lazy"
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-sm font-light text-slate-500">
+              <div
+                className="flex h-full items-center justify-center text-sm font-light"
+                style={{ color: colors.secondaryText }}
+              >
                 Map coordinates not configured
               </div>
             )}
           </div>
-        )}
-      </div>
+        </CraftReveal>
+      )}
 
       <ContactSideForm isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
-    </section>
+    </CraftSection>
   );
 }
 

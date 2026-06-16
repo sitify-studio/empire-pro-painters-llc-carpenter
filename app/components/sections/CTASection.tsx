@@ -1,11 +1,17 @@
 'use client';
 
-import NextImage from 'next/image';
 import { useMemo } from 'react';
 import type { Page } from '@/app/lib/types';
+import { OptimizedImage } from '@/app/components/ui/OptimizedImage';
 import { useScrollAnimation } from '@/app/hooks/useScrollAnimation';
-import { useSectionTheme } from '@/app/hooks/useSectionTheme';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
+import {
+  CraftButton,
+  CraftReveal,
+  CRAFT_DESC_CLASS,
+  CRAFT_TITLE_CLASS,
+  useCraftTheme,
+} from '@/app/components/sections/CraftSection';
 import { tiptapToText } from '@/app/lib/seo';
 import { cn, getImageSrc } from '@/app/lib/utils';
 
@@ -59,8 +65,7 @@ function resolveCtaButton(cta?: CtaSectionInput): { label: string; href: string 
 }
 
 export function CTASection({ ctaSection, className }: CTASectionProps) {
-  const theme = useSectionTheme();
-  const { colors } = theme;
+  const { colors, borderColor } = useCraftTheme();
   const cta = ctaSection as CtaSectionInput | undefined;
 
   const subHeading = useMemo(
@@ -72,72 +77,84 @@ export function CTASection({ ctaSection, className }: CTASectionProps) {
   const ctaButton = useMemo(() => resolveCtaButton(cta), [cta]);
   const ctaImage = useMemo(() => resolveCtaBackgroundImage(cta), [cta]);
 
-  const { ref: contentRef, isVisible: contentVisible } = useScrollAnimation<HTMLDivElement>({ threshold: 0.2 });
+  const { ref: contentRef, isVisible: contentVisible } = useScrollAnimation<HTMLDivElement>({
+    threshold: 0.2,
+  });
 
   if (!ctaSection || ctaSection.enabled === false) return null;
   if (!heading && !description && !ctaButton) return null;
 
-  const primaryColor = colors.mainText;
+  const overlayColor = colors.sectionBackgroundDark;
 
   return (
-    <section className={cn('relative min-h-[80vh] flex items-center overflow-hidden bg-neutral-950', className)}>
-      <div className="absolute inset-0 z-0">
-        {ctaImage && (
-          <NextImage
+    <section
+      id="cta"
+      className={cn('relative overflow-hidden border-t', className)}
+      style={{
+        borderColor,
+        color: colors.darkPrimaryText,
+        backgroundColor: ctaImage ? 'transparent' : overlayColor,
+      }}
+    >
+      {ctaImage && (
+        <div className="pointer-events-none absolute inset-0 z-0">
+          <OptimizedImage
             src={ctaImage}
-            alt="CTA background"
+            alt={heading || 'Call to action'}
             fill
-            className="object-cover opacity-40 grayscale"
-            quality={90}
+            priority
+            className="object-cover object-center"
+            sizes="100vw"
           />
-        )}
+        </div>
+      )}
+
+      <div className="pointer-events-none absolute inset-0 z-[1]" aria-hidden>
         <div
-          className="absolute inset-0 bg-neutral-950/80"
+          className="absolute inset-0"
           style={{
-            background: `linear-gradient(to right, ${primaryColor} 0%, transparent 100%)`,
+            background: `linear-gradient(to right, color-mix(in srgb, ${overlayColor} 78%, transparent) 0%, color-mix(in srgb, ${overlayColor} 40%, transparent) 45%, color-mix(in srgb, ${overlayColor} 20%, transparent) 100%)`,
           }}
         />
       </div>
 
-      <div className="absolute top-0 left-1/4 w-px h-full bg-white/10 hidden lg:block" />
+      <div className="container relative z-10 mx-auto flex min-h-[min(72vh,720px)] items-center px-6 py-14 sm:py-16 lg:px-12 lg:py-20">
+        <CraftReveal visible={contentVisible} className="w-full">
+          <div ref={contentRef} className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
+            <div className="lg:col-span-8 lg:col-start-2">
+              <SectionHeading
+                eyebrow={subHeading}
+                title={heading}
+                description={description}
+                variant="dark"
+                titleClassName={CRAFT_TITLE_CLASS}
+                descriptionClassName={cn(CRAFT_DESC_CLASS, 'mb-8')}
+              />
 
-      <div className="container mx-auto px-6 lg:px-12 relative z-10">
-        <div
-          ref={contentRef}
-          className={`grid grid-cols-1 lg:grid-cols-12 gap-12 items-center transition-all duration-1000 ${
-            contentVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-          }`}
-        >
-          <div className="lg:col-span-8 lg:col-start-2">
-            <SectionHeading
-              eyebrow={subHeading}
-              title={heading}
-              description={description}
-              variant="dark"
-              descriptionClassName="max-w-2xl mb-8"
-            />
+              {ctaButton && (
+                <div className="flex flex-col items-start gap-8 sm:flex-row">
+                  <CraftButton href={ctaButton.href} label={ctaButton.label} />
 
-            {ctaButton && (
-              <div className="flex flex-col sm:flex-row items-start gap-8">
-                <a
-                  href={ctaButton.href}
-                  className="group relative px-12 py-5 bg-white text-black text-[11px] font-bold uppercase tracking-[0.2em] transition-all duration-500 hover:bg-transparent hover:text-white"
-                >
-                  <span className="absolute inset-0 border border-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <span className="relative z-10">{ctaButton.label}</span>
-                </a>
-
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase tracking-widest text-white/30 mb-1">Direct Inquiries</span>
-                  <span className="text-white font-light text-lg tracking-tight">Available 24/7</span>
+                  <div className="flex flex-col">
+                    <span
+                      className="mb-1 text-[10px] uppercase tracking-widest"
+                      style={{ color: colors.darkSecondaryText }}
+                    >
+                      Direct Inquiries
+                    </span>
+                    <span
+                      className="text-lg font-light tracking-tight"
+                      style={{ color: colors.darkPrimaryText }}
+                    >
+                      Available 24/7
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        </CraftReveal>
       </div>
-
-      <div className="absolute bottom-0 left-0 w-full h-1/3 bg-gradient-to-t from-neutral-950 to-transparent pointer-events-none" />
     </section>
   );
 }

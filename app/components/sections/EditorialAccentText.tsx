@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 /** Stylized serif italic accent for a single character inside display headlines. */
 export function EditorialAccentChar({ children }: { children: ReactNode }) {
   return (
-    <span className="hero-editorial-script relative z-30 mx-0.5 text-[clamp(4.75rem,10vw,11rem)] leading-[0.88] tracking-normal text-zinc-700">
+    <span className="hero-editorial-script relative z-30 mx-0.5 text-[clamp(4.75rem,10vw,11rem)] leading-[0.88] tracking-normal text-[color:var(--wb-text-secondary)]">
       {children}
     </span>
   );

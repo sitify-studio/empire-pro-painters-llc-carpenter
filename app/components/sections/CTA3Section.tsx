@@ -40,8 +40,8 @@ export const CTA3Section: React.FC<CTA3SectionProps> = ({ cta3Section, className
         className="absolute inset-0"
         style={{
           background: backgroundImageUrl
-            ? 'linear-gradient(90deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.30) 52%, rgba(0,0,0,0.10) 100%)'
-            : `linear-gradient(135deg, ${themeColors.primaryButton}22 0%, rgba(0,0,0,0) 60%)`,
+            ? `linear-gradient(90deg, color-mix(in srgb, ${themeColors.sectionBackgroundDark} 72%, transparent) 0%, color-mix(in srgb, ${themeColors.sectionBackgroundDark} 30%, transparent) 52%, color-mix(in srgb, ${themeColors.sectionBackgroundDark} 10%, transparent) 100%)`
+            : `linear-gradient(135deg, color-mix(in srgb, ${themeColors.primaryButton} 13%, transparent) 0%, transparent 60%)`,
         }}
       />
 
@@ -51,7 +51,7 @@ export const CTA3Section: React.FC<CTA3SectionProps> = ({ cta3Section, className
             {safeCta.title && (
               <div
                 className="text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight"
-                style={{ color: backgroundImageUrl ? '#FFFFFF' : themeColors.lightPrimaryText }}
+                style={{ color: backgroundImageUrl ? themeColors.darkPrimaryText : themeColors.lightPrimaryText }}
               >
                 <TiptapRenderer content={safeCta.title} />
               </div>
@@ -61,7 +61,7 @@ export const CTA3Section: React.FC<CTA3SectionProps> = ({ cta3Section, className
               <div
                 className="mt-6 text-base sm:text-lg lg:text-xl max-w-2xl"
                 style={{
-                  color: backgroundImageUrl ? 'rgba(255,255,255,0.88)' : themeColors.lightSecondaryText,
+                  color: backgroundImageUrl ? themeColors.darkSecondaryText : themeColors.lightSecondaryText,
                 }}
               >
                 <TiptapRenderer content={safeCta.description} />

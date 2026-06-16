@@ -15,9 +15,15 @@ import {
   normalizeSlug,
   resolveServiceSlug,
 } from '@/app/lib/serviceAreaSlugs';
-import { useScrollAnimation, useStaggeredAnimation } from '@/app/hooks/useScrollAnimation';
-import { useSectionTheme } from '@/app/hooks/useSectionTheme';
+import { useScrollAnimation } from '@/app/hooks/useScrollAnimation';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
+import {
+  CraftReveal,
+  CraftSection,
+  CRAFT_DESC_CLASS,
+  CRAFT_TITLE_CLASS,
+  useCraftTheme,
+} from '@/app/components/sections/CraftSection';
 
 interface ServingAreasSectionProps {
   servingAreasSection?: Page['servingAreasSection'];
@@ -81,66 +87,100 @@ function enrichArea(
   };
 }
 
-function AreaItem({
+function LocationIcon({ color }: { color: string }) {
+  return (
+    <svg viewBox="0 0 32 32" fill="none" className="h-8 w-8 shrink-0 sm:h-9 sm:w-9" aria-hidden>
+      <path
+        d="M16 4c-4.4 0-8 3.4-8 7.6 0 5.7 8 16.4 8 16.4s8-10.7 8-16.4C24 7.4 20.4 4 16 4z"
+        stroke={color}
+        strokeWidth="1.25"
+        strokeLinejoin="round"
+      />
+      <circle cx="16" cy="11.5" r="2.5" stroke={color} strokeWidth="1.25" />
+    </svg>
+  );
+}
+
+function AreaListItem({
   area,
   index,
-  accentColor,
   fonts,
+  colors,
+  accentColor,
   visible,
 }: {
   area: DisplayArea;
   index: number;
+  fonts: ReturnType<typeof useCraftTheme>['fonts'];
+  colors: ReturnType<typeof useCraftTheme>['colors'];
   accentColor: string;
-  fonts: ReturnType<typeof useSectionTheme>['fonts'];
   visible: boolean;
 }) {
-  const content = (
+  const row = (
     <div
       className={cn(
-        'border-t border-slate-200 pt-6 transition-all duration-700',
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6',
+        'flex gap-5 py-8 transition-all duration-700 sm:gap-6 sm:py-9',
+        visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0',
         area.href && 'group'
       )}
+      style={{ transitionDelay: `${index * 70}ms` }}
     >
-      <div className="flex items-baseline gap-4 mb-4">
+      <LocationIcon color={`color-mix(in srgb, ${accentColor} 65%, ${colors.mainText})`} />
+
+      <div className="min-w-0 flex-1">
         <span
-          className="text-[10px] font-bold uppercase tracking-[0.35em]"
-          style={{ color: accentColor }}
+          className="text-[10px] font-semibold uppercase tracking-[0.32em]"
+          style={{ color: accentColor, fontFamily: fonts.body }}
         >
           {String(index + 1).padStart(2, '0')}
         </span>
-        <div className="h-px flex-1 max-w-12" style={{ backgroundColor: `${accentColor}40` }} />
+
+        <p
+          className={cn(
+            'mt-2 text-xl font-semibold tracking-tight sm:text-2xl',
+            area.href && 'transition-opacity group-hover:opacity-75'
+          )}
+          style={{ fontFamily: fonts.heading, color: colors.mainText }}
+        >
+          {area.city}
+        </p>
+
+        {area.region && area.region !== area.city && (
+          <p
+            className="mt-1 text-sm sm:text-[15px]"
+            style={{ color: colors.secondaryText, fontFamily: fonts.body }}
+          >
+            {area.region}
+          </p>
+        )}
       </div>
 
-      <p
-        className={cn(
-          'text-base sm:text-lg font-normal tracking-tight text-slate-900',
-          area.href && 'transition-colors group-hover:text-slate-600'
-        )}
-        style={{ fontFamily: fonts.heading }}
-      >
-        {area.label}
-      </p>
+      {area.href && (
+        <span
+          className="hidden shrink-0 self-center text-[11px] font-semibold uppercase tracking-[0.2em] opacity-0 transition-all duration-300 group-hover:translate-x-0.5 group-hover:opacity-100 sm:inline-flex"
+          style={{ color: colors.mainText, fontFamily: fonts.body }}
+        >
+          View
+        </span>
+      )}
     </div>
   );
 
   if (area.href) {
     return (
-      <Link
-        href={area.href}
-        className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded-sm"
-      >
-        {content}
-      </Link>
+      <li>
+        <Link href={area.href} className="block no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
+          {row}
+        </Link>
+      </li>
     );
   }
 
-  return content;
+  return <li>{row}</li>;
 }
 
 export function ServingAreasSection({ servingAreasSection, className }: ServingAreasSectionProps) {
-  const theme = useSectionTheme();
-  const { colors, fonts } = theme;
+  const { colors, fonts, accentColor } = useCraftTheme();
   const { site, services, serviceAreaPages } = useWebBuilder();
 
   const serviceAreas = useMemo<DisplayArea[]>(() => {
@@ -236,52 +276,63 @@ export function ServingAreasSection({ servingAreasSection, className }: ServingA
     return text || getBusinessTagline(site) || '';
   }, [servingAreasSection?.description, site]);
 
-  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>({ threshold: 0.2 });
-  const { ref: gridRef, visibleItems } = useStaggeredAnimation(serviceAreas.length, 80);
+  const { ref: sectionRef, isVisible } = useScrollAnimation<HTMLDivElement>({ threshold: 0.12 });
 
   if (servingAreasSection?.enabled === false) return null;
   if (serviceAreas.length === 0) return null;
 
-  const accentColor = colors.primaryButton;
+  const dividerColor = `color-mix(in srgb, ${colors.mainText} 12%, transparent)`;
 
   return (
-    <section
+    <CraftSection
       id="serving-areas"
-      className={cn('relative overflow-hidden bg-[#fcfcfc] pt-12 lg:pt-16 pb-10 lg:pb-12', className)}
+      surface="page"
+      accentLine
+      className={cn('overflow-visible', className)}
     >
-      <div className="container mx-auto px-6 lg:px-12">
-        <div
-          ref={titleRef}
-          className={cn(
-            'mb-8 lg:mb-10 max-w-3xl transition-all duration-1000',
-            titleVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          )}
+      <div ref={sectionRef} className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-14 xl:gap-20">
+        <CraftReveal
+          visible={isVisible}
+          className="lg:col-span-5 lg:sticky lg:top-24 lg:self-start xl:col-span-4"
         >
           <SectionHeading
             eyebrow="Locations"
             title={sectionTitle}
             description={sectionDescription || undefined}
-            descriptionClassName="max-w-2xl"
+            titleClassName={CRAFT_TITLE_CLASS}
+            descriptionClassName={CRAFT_DESC_CLASS}
           />
-        </div>
 
-        <div
-          ref={gridRef}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-10 gap-y-8"
-        >
-          {serviceAreas.map((area, index) => (
-            <AreaItem
-              key={areaKey(area)}
-              area={area}
-              index={index}
-              accentColor={accentColor}
-              fonts={fonts}
-              visible={visibleItems.includes(index)}
-            />
-          ))}
+          <Link
+            href="/contact-us"
+            className="mt-7 inline-flex min-h-[44px] items-center justify-center border bg-white px-8 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] transition-opacity hover:opacity-85"
+            style={{
+              borderColor: `color-mix(in srgb, ${colors.mainText} 35%, transparent)`,
+              color: colors.mainText,
+              fontFamily: fonts.body,
+            }}
+          >
+            Get In Touch
+          </Link>
+        </CraftReveal>
+
+        <div className="lg:col-span-7 xl:col-span-8">
+          <ul className="divide-y border-t" style={{ borderColor: dividerColor }}>
+            {serviceAreas.map((area, index) => (
+              <AreaListItem
+                key={areaKey(area)}
+                area={area}
+                index={index}
+                fonts={fonts}
+                colors={colors}
+                accentColor={accentColor}
+                visible={isVisible}
+              />
+            ))}
+          </ul>
         </div>
       </div>
-    </section>
+    </CraftSection>
   );
 }
 

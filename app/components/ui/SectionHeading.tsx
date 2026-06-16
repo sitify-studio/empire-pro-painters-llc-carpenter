@@ -29,7 +29,7 @@ export function SectionHeading({
 }: SectionHeadingProps) {
   const { colors, fonts } = useSectionTheme();
   const isDark = variant === 'dark';
-  const accentColor = isDark ? colors.primaryButton : 'color-mix(in srgb, var(--wb-primary) 72%, #1e293b)';
+  const accentColor = colors.primaryButton;
 
   if (!eyebrow && !title && !description) return null;
 
@@ -62,10 +62,12 @@ export function SectionHeading({
         <Tag
           className={cn(
             'text-[clamp(1.65rem,3vw,2.5rem)] font-normal tracking-tight leading-[1.15] mb-4 sm:mb-5',
-            isDark ? 'text-white' : 'text-slate-900',
             titleClassName
           )}
-          style={{ fontFamily: fonts.heading, color: isDark ? undefined : colors.mainText }}
+          style={{
+            fontFamily: fonts.heading,
+            color: isDark ? colors.darkPrimaryText : colors.mainText,
+          }}
         >
           {title}
         </Tag>
@@ -75,10 +77,12 @@ export function SectionHeading({
         <p
           className={cn(
             'max-w-xl text-base font-light leading-relaxed sm:text-lg',
-            isDark ? 'text-white/70' : 'text-slate-500',
             descriptionClassName
           )}
-          style={{ fontFamily: fonts.body }}
+          style={{
+            fontFamily: fonts.body,
+            color: isDark ? colors.darkSecondaryText : colors.secondaryText,
+          }}
         >
           {description}
         </p>

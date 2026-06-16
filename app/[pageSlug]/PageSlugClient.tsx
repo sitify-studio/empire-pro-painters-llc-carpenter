@@ -74,7 +74,7 @@ export default function PageSlugClient({ pageSlug: pageSlugProp }: PageSlugClien
     }
   }, [pageSlug, pages, loading, setCurrentPage, loadServiceAreaPage]);
 
-  if (loading || serviceAreaLoading) {
+  if (serviceAreaLoading) {
     return <PageContentLoader />;
   }
 

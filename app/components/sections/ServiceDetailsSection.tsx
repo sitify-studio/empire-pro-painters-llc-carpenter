@@ -5,6 +5,8 @@ import { TiptapRenderer } from '@/app/components/ui/TiptapRenderer';
 import { cn, getImageSrc } from '@/app/lib/utils';
 import { OptimizedImage, IMAGE_SIZES } from '@/app/components/ui/OptimizedImage';
 
+import { useThemeColors } from '@/app/hooks/useTheme';
+
 interface ServiceDetailsSectionProps {
     service: any;
     galleryImages: any[];
@@ -21,16 +23,18 @@ export const ServiceDetailsSection: React.FC<ServiceDetailsSectionProps> = ({
     service,
     galleryImages
 }) => {
+    const themeColors = useThemeColors();
+
     return (
         <div className="lg:col-span-8">
             <style>{`
                 .service-description,
                 .service-description * {
-                    color: #000000 !important;
+                    color: var(--wb-text-main) !important;
                 }
                 .service-features,
                 .service-features * {
-                    color: #000000 !important;
+                    color: var(--wb-text-main) !important;
                 }
             `}</style>
             {/* Featured Image */}
@@ -52,7 +56,7 @@ export const ServiceDetailsSection: React.FC<ServiceDetailsSectionProps> = ({
                 <div
                     className="prose prose-lg max-w-none service-description"
                     style={{
-                        color: '#000000',
+                        color: themeColors.mainText,
                     }}
                 >
                     <TiptapRenderer content={service.description} />
@@ -64,7 +68,7 @@ export const ServiceDetailsSection: React.FC<ServiceDetailsSectionProps> = ({
                     <h2
                         className="text-2xl lg:text-3xl font-semibold mb-4"
                         style={{
-                            color: '#000000',
+                            color: themeColors.mainText,
                         }}
                     >
                         Features
@@ -72,7 +76,7 @@ export const ServiceDetailsSection: React.FC<ServiceDetailsSectionProps> = ({
                     <div
                         className="prose prose-lg max-w-none service-features"
                         style={{
-                            color: '#000000',
+                            color: themeColors.mainText,
                         }}
                     >
                         {Array.isArray(service.features) ? (
@@ -117,7 +121,7 @@ export const ServiceDetailsSection: React.FC<ServiceDetailsSectionProps> = ({
                                     {image.caption && (
                                         <p
                                             className="text-sm italic"
-                                            style={{ color: '#000000' }}
+                                            style={{ color: themeColors.secondaryText }}
                                         >
                                             {image.caption}
                                         </p>

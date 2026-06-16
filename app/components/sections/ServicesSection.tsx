@@ -1,15 +1,23 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
-import type { Page, Service } from '@/app/lib/types';
+import type { Page } from '@/app/lib/types';
+import { MaskBlindRevealImage } from '@/app/components/cinematic/MaskBlindRevealImage';
 import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { useScrollAnimation, useStaggeredAnimation } from '@/app/hooks/useScrollAnimation';
 import { useSectionTheme } from '@/app/hooks/useSectionTheme';
 import type { ThemeColors } from '@/app/hooks/useTheme';
 import { tiptapToText } from '@/app/lib/seo';
 import { SectionHeading } from '@/app/components/ui/SectionHeading';
-import { cn } from '@/app/lib/utils';
+import {
+  CraftReveal,
+  CraftSection,
+  CRAFT_DESC_CLASS,
+  CRAFT_TITLE_CLASS,
+  useCraftTheme,
+} from '@/app/components/sections/CraftSection';
+import { cn, getImageSrc } from '@/app/lib/utils';
 
 interface ServicesSectionProps {
   servicesSection?: Page['servicesSection'];
@@ -24,37 +32,7 @@ type DisplayService = {
   description: string;
   slug: string;
   href: string;
-};
-
-const MAX_FAN_CARDS = 5;
-const SEMI_HEIGHT = 200;
-
-type FanSlot = { rotate: number; x: number; bottom: number };
-
-const FAN_PRESETS: Record<number, FanSlot[]> = {
-  1: [{ rotate: 0, x: 0, bottom: 228 }],
-  2: [
-    { rotate: -30, x: -175, bottom: 210 },
-    { rotate: 30, x: 175, bottom: 210 },
-  ],
-  3: [
-    { rotate: -45, x: -235, bottom: 198 },
-    { rotate: 0, x: 0, bottom: 248 },
-    { rotate: 45, x: 235, bottom: 198 },
-  ],
-  4: [
-    { rotate: -52, x: -295, bottom: 192 },
-    { rotate: -18, x: -105, bottom: 228 },
-    { rotate: 18, x: 105, bottom: 228 },
-    { rotate: 52, x: 295, bottom: 192 },
-  ],
-  5: [
-    { rotate: -58, x: -340, bottom: 186 },
-    { rotate: -30, x: -175, bottom: 215 },
-    { rotate: 0, x: 0, bottom: 252 },
-    { rotate: 30, x: 175, bottom: 215 },
-    { rotate: 58, x: 340, bottom: 186 },
-  ],
+  imageUrl: string;
 };
 
 function normalizeHref(href: string): string {
@@ -67,181 +45,115 @@ function serviceHref(slug: string, name: string): string {
   return `/service/${slug || name.toLowerCase().replace(/\s+/g, '-')}`;
 }
 
-function resolveServiceHref(service: Service): string {
-  const defaultHref = serviceHref(service.slug, service.name);
+function resolveServiceHref(service: {
+  slug: string;
+  name: string;
+  cta?: { buttonUrl?: string };
+}): string {
   const customUrl = service.cta?.buttonUrl?.trim();
-  return customUrl ? normalizeHref(customUrl) : defaultHref;
+  return customUrl ? normalizeHref(customUrl) : serviceHref(service.slug, service.name);
 }
 
-function getFanSlot(index: number, total: number): FanSlot {
-  const preset = FAN_PRESETS[Math.min(total, MAX_FAN_CARDS)];
-  if (preset?.[index]) return preset[index];
-
-  const center = (total - 1) / 2;
-  const offset = index - center;
-  const maxAngle = 58;
-  const step = total > 1 ? (maxAngle * 2) / (total - 1) : 0;
-
-  return {
-    rotate: -maxAngle + index * step,
-    x: offset * 120,
-    bottom: 220 - Math.abs(offset) * 12,
-  };
-}
-
-function ServicePillLink({
-  href,
-  label,
-  colors,
-  fonts,
-}: {
-  href: string;
-  label: string;
-  colors: ThemeColors;
-  fonts: ReturnType<typeof useSectionTheme>['fonts'];
-}) {
-  return (
-    <Link
-      href={href}
-      className="mt-auto inline-flex w-full items-center justify-between gap-3 rounded-full border px-4 py-2.5 text-xs font-semibold transition-opacity hover:opacity-80"
-      style={{
-        borderColor: colors.darkPrimaryText,
-        color: colors.darkPrimaryText,
-        fontFamily: fonts.body,
-      }}
-    >
-      <span>{label}</span>
-      <span
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border"
-        style={{ borderColor: colors.darkPrimaryText }}
-      >
-        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-        </svg>
-      </span>
-    </Link>
-  );
-}
-
-function RadialServiceCard({
+function ServiceRow({
   service,
   index,
-  total,
-  visible,
-  isActive,
-  onActivate,
+  textVisible,
   colors,
   fonts,
+  accentColor,
 }: {
   service: DisplayService;
   index: number;
-  total: number;
-  visible: boolean;
-  isActive: boolean;
-  onActivate: () => void;
+  textVisible: boolean;
   colors: ThemeColors;
   fonts: ReturnType<typeof useSectionTheme>['fonts'];
+  accentColor: string;
 }) {
-  const { rotate, x, bottom } = getFanSlot(index, total);
-
-  const delay = index * 140 + 80;
+  const isEven = index % 2 === 0;
+  const delay = index * 120;
 
   return (
-    <div
-      className={cn('absolute left-1/2', isActive ? 'z-30' : 'z-10')}
-      style={{
-        bottom,
-        opacity: visible ? 1 : 0,
-        transform: visible
-          ? `translateX(calc(-50% + ${x}px)) translateY(0) scale(1)`
-          : `translateX(calc(-50% + 0px)) translateY(72px) scale(0.9)`,
-        transition: `transform 0.85s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, opacity 0.65s ease ${delay}ms`,
-      }}
+    <article
+      className="grid items-center gap-8 border-b py-10 sm:py-12 lg:grid-cols-2 lg:gap-14 lg:py-14"
+      style={{ borderColor: `color-mix(in srgb, ${colors.mainText} 12%, transparent)` }}
     >
-      <article
-        onMouseEnter={onActivate}
-        onFocus={onActivate}
-        className="flex min-h-[360px] w-[248px] flex-col rounded-[1.75rem] p-5 shadow-lg"
-        style={{
-          transform: `rotate(${visible ? rotate : 0}deg) scale(${isActive ? 1.03 : 1})`,
-          transformOrigin: 'bottom center',
-          backgroundColor: colors.primaryButton,
-          transition: `transform 0.85s cubic-bezier(0.22, 1, 0.36, 1) ${delay + 60}ms`,
-        }}
+      <div className={cn('w-full', isEven ? 'lg:order-1' : 'lg:order-2')}>
+        {service.imageUrl ? (
+          <MaskBlindRevealImage
+            src={service.imageUrl}
+            alt={service.name}
+            aspectClassName="aspect-[4/3]"
+            sizes="(max-width: 1024px) 100vw, 45vw"
+            scrub={1.1}
+            start="top 88%"
+            end="center center"
+          />
+        ) : (
+          <div
+            className="aspect-[4/3] w-full"
+            style={{
+              backgroundColor: `color-mix(in srgb, ${accentColor} 18%, ${colors.sectionBackgroundLight})`,
+            }}
+            aria-hidden
+          />
+        )}
+      </div>
+
+      <div
+        className={cn(
+          'flex flex-col justify-center gap-4 transition-all duration-1000',
+          isEven ? 'lg:order-2' : 'lg:order-1',
+          textVisible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+        )}
+        style={{ transitionDelay: `${delay + 150}ms` }}
       >
+        <span
+          className="text-[10px] font-bold uppercase tracking-[0.35em]"
+          style={{ color: accentColor, fontFamily: fonts.body }}
+        >
+          {String(index + 1).padStart(2, '0')}
+        </span>
+
         <h3
-          className="mb-3 text-lg font-bold leading-tight"
-          style={{ fontFamily: fonts.heading, color: colors.darkPrimaryText }}
+          className="text-[clamp(1.35rem,3vw,2.25rem)] font-semibold leading-[1.1] tracking-tight"
+          style={{ fontFamily: fonts.heading, color: colors.mainText }}
         >
           {service.name}
         </h3>
 
         {service.description && (
           <p
-            className="mb-5 flex-1 text-[11px] leading-relaxed"
-            style={{ color: colors.darkPrimaryText, fontFamily: fonts.body }}
+            className="max-w-lg text-sm leading-relaxed sm:text-[15px]"
+            style={{ color: colors.secondaryText, fontFamily: fonts.body }}
           >
             {service.description}
           </p>
         )}
 
-        <ServicePillLink
-          href={service.href}
-          label="Learn more"
-          colors={colors}
-          fonts={fonts}
-        />
-      </article>
-    </div>
-  );
-}
-
-function MobileServiceCard({
-  service,
-  index,
-  visible,
-  colors,
-  fonts,
-}: {
-  service: DisplayService;
-  index: number;
-  visible: boolean;
-  colors: ThemeColors;
-  fonts: ReturnType<typeof useSectionTheme>['fonts'];
-}) {
-  return (
-    <article
-      className={cn(
-        'flex min-h-[320px] w-[min(85vw,280px)] shrink-0 snap-center flex-col rounded-[1.75rem] p-5 shadow-lg',
-        visible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-10 scale-95 opacity-0'
-      )}
-      style={{
-        transitionDelay: `${index * 120}ms`,
-        transitionDuration: '0.75s',
-        transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
-        backgroundColor: colors.primaryButton,
-      }}
-    >
-      <h3
-        className="mb-3 text-lg font-bold"
-        style={{ fontFamily: fonts.heading, color: colors.darkPrimaryText }}
-      >
-        {service.name}
-      </h3>
-      {service.description && (
-        <p
-          className="mb-5 flex-1 text-xs leading-relaxed"
-          style={{ color: colors.darkPrimaryText, fontFamily: fonts.body }}
-        >
-          {service.description}
-        </p>
-      )}
-      <ServicePillLink
-        href={service.href}
-        label="Learn more"
-        colors={colors}
-        fonts={fonts}
-      />
+        <div className="pt-2">
+          <Link
+            href={service.href}
+            className="group/link inline-flex items-center gap-2 border-b pb-1 text-[11px] font-semibold uppercase tracking-[0.18em] transition-all duration-300 hover:gap-3"
+            style={{
+              borderColor: `color-mix(in srgb, ${colors.mainText} 35%, transparent)`,
+              color: colors.mainText,
+              fontFamily: fonts.body,
+            }}
+          >
+            <span>Explore Service</span>
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </Link>
+        </div>
+      </div>
     </article>
   );
 }
@@ -249,163 +161,78 @@ function MobileServiceCard({
 export function ServicesSection({ servicesSection, className }: ServicesSectionProps) {
   const { services } = useWebBuilder();
   const { colors, fonts } = useSectionTheme();
-  const [activeIndex, setActiveIndex] = useState(0);
+  const { accentColor } = useCraftTheme();
 
   const title = useMemo(() => tiptapToText(servicesSection?.title), [servicesSection?.title]);
   const description = useMemo(
     () => tiptapToText(servicesSection?.description),
     [servicesSection?.description]
   );
-  const displayServices = useMemo(() => {
+
+  const displayServices = useMemo((): DisplayService[] => {
     const fromApi = (services ?? []).filter((service) =>
       servicesSection?.serviceIds?.length
         ? servicesSection.serviceIds.includes(service._id)
         : service.status === 'published'
     );
 
-    return fromApi.map((service) => ({
-      name: service.name,
-      description: tiptapToText(service.shortDescription),
-      slug: service.slug,
-      href: resolveServiceHref(service),
-    }));
+    return fromApi.map((service) => {
+      const rawUrl =
+        service.thumbnailImage?.url ||
+        service.galleryImages?.[0]?.url ||
+        service.cta?.image?.url ||
+        service.seo?.ogImageUrl ||
+        '';
+      return {
+        name: service.name,
+        description: tiptapToText(service.shortDescription),
+        slug: service.slug,
+        href: resolveServiceHref(service),
+        imageUrl: rawUrl ? getImageSrc(rawUrl) : '',
+      };
+    });
   }, [services, servicesSection?.serviceIds]);
 
-  const fanServices = displayServices.slice(0, MAX_FAN_CARDS);
-  const extraServices = displayServices.slice(MAX_FAN_CARDS);
-  const fanCount = fanServices.length;
-  const defaultActive = Math.floor(fanCount / 2);
-
-  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>({ threshold: 0.1 });
-  const { ref: fanRef, visibleItems, isVisible: fanInView } = useStaggeredAnimation(
-    displayServices.length,
-    140
-  );
+  const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation<HTMLDivElement>({
+    threshold: 0.1,
+  });
+  const { ref: listRef, visibleItems } = useStaggeredAnimation(displayServices.length, 100);
 
   if (!servicesSection || servicesSection.enabled === false) return null;
   if (!title && !description && displayServices.length === 0) return null;
 
-  const resolvedActive = activeIndex < fanCount ? activeIndex : defaultActive;
-
   return (
-    <section
-      id="services"
-      className={cn('relative overflow-hidden py-12 lg:py-16', className)}
-      style={{ backgroundColor: colors.pageBackground }}
-    >
-      <div className="container mx-auto px-6 lg:px-12">
-        {(title || description) && (
-          <div
-            ref={titleRef}
-            className={cn(
-              'mb-10 max-w-3xl transition-all duration-1000 lg:mb-12',
-              titleVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-            )}
-          >
+    <CraftSection id="services" surface="page" dotted accentLine className={className}>
+      {(title || description) && (
+        <CraftReveal visible={titleVisible} className="mb-10 max-w-3xl lg:mb-14">
+          <div ref={titleRef}>
             <SectionHeading
-              eyebrow="Services"
+              eyebrow="Capabilities"
               title={title}
               description={description}
-              descriptionClassName="max-w-2xl"
+              titleClassName={CRAFT_TITLE_CLASS}
+              descriptionClassName={CRAFT_DESC_CLASS}
             />
           </div>
-        )}
+        </CraftReveal>
+      )}
 
-        {fanServices.length > 0 && (
-          <div ref={fanRef}>
-            <div className="flex gap-4 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide lg:hidden">
-              {displayServices.map((service, index) => (
-                <MobileServiceCard
-                  key={service.slug || index}
-                  service={service}
-                  index={index}
-                  visible={visibleItems.includes(index)}
-                  colors={colors}
-                  fonts={fonts}
-                />
-              ))}
-            </div>
-
-            <div className="relative mx-auto hidden h-[600px] max-w-[900px] lg:block">
-              {fanServices.map((service, index) => (
-                <RadialServiceCard
-                  key={service.slug || index}
-                  service={service}
-                  index={index}
-                  total={fanCount}
-                  visible={visibleItems.includes(index)}
-                  isActive={resolvedActive === index}
-                  onActivate={() => setActiveIndex(index)}
-                  colors={colors}
-                  fonts={fonts}
-                />
-              ))}
-
-              <div
-                className={cn(
-                  'absolute bottom-0 left-1/2 w-[min(100%,560px)] -translate-x-1/2 transition-all duration-700',
-                  fanInView ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
-                )}
-                style={{
-                  height: SEMI_HEIGHT,
-                  transitionDelay: '200ms',
-                  transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
-                }}
-              >
-                <div
-                  className="relative flex h-full w-full flex-col items-center justify-end pb-9"
-                  style={{
-                    borderRadius: '560px 560px 0 0',
-                    backgroundColor: colors.cardBackgroundDark,
-                  }}
-                >
-                  <div className="absolute top-5 flex items-center gap-2.5">
-                    {fanServices.map((_, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        aria-label={`View service ${i + 1}`}
-                        onClick={() => setActiveIndex(i)}
-                        className="rounded-full transition-all duration-300"
-                        style={{
-                          width: resolvedActive === i ? 10 : 6,
-                          height: resolvedActive === i ? 10 : 6,
-                          backgroundColor:
-                            resolvedActive === i ? colors.darkPrimaryText : colors.inactiveDark,
-                          opacity: resolvedActive === i ? 1 : 0.45,
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  <h2
-                    className="text-3xl font-bold tracking-tight"
-                    style={{ fontFamily: fonts.heading, color: colors.darkPrimaryText }}
-                  >
-                    Services
-                  </h2>
-                </div>
-              </div>
-            </div>
-
-            {extraServices.length > 0 && (
-              <div className="mt-8 flex flex-wrap justify-center gap-4 lg:mt-10">
-                {extraServices.map((service, index) => (
-                  <MobileServiceCard
-                    key={service.slug || index + MAX_FAN_CARDS}
-                    service={service}
-                    index={index + MAX_FAN_CARDS}
-                    visible={visibleItems.includes(index + MAX_FAN_CARDS)}
-                    colors={colors}
-                    fonts={fonts}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </section>
+      {displayServices.length > 0 && (
+        <div ref={listRef} className="mx-auto w-full max-w-6xl">
+          {displayServices.map((service, index) => (
+            <ServiceRow
+              key={service.slug || index}
+              service={service}
+              index={index}
+              textVisible={visibleItems.includes(index)}
+              colors={colors}
+              fonts={fonts}
+              accentColor={accentColor}
+            />
+          ))}
+        </div>
+      )}
+    </CraftSection>
   );
 }
 

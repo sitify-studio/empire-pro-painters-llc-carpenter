@@ -94,11 +94,14 @@ export const ServiceContactFormSection: React.FC<ServiceContactFormSectionProps>
         <button
           onClick={() => setIsFormOpen(true)}
           className="group relative flex items-center justify-between px-10 py-6 w-full max-w-[320px] transition-all duration-500 overflow-hidden text-left"
-          style={{ backgroundColor: themeColors.primaryButton, color: '#FFFFFF' }}
+          style={{ backgroundColor: themeColors.primaryButton, color: themeColors.darkPrimaryText }}
         >
           <span className="text-[11px] font-bold tracking-[0.4em] uppercase z-10">Get a Quote</span>
           <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform z-10" />
-          <div className="absolute inset-0 bg-black/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+          <div
+            className="absolute inset-0 translate-y-full group-hover:translate-y-0 transition-transform duration-500"
+            style={{ backgroundColor: `color-mix(in srgb, ${themeColors.sectionBackgroundDark} 10%, transparent)` }}
+          />
         </button>
       </div>
 
@@ -133,11 +136,14 @@ export const ServiceContactFormSection: React.FC<ServiceContactFormSectionProps>
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group relative flex items-center justify-between px-8 py-4 w-full max-w-[220px] transition-all duration-500 overflow-hidden mt-8"
-                style={{ backgroundColor: themeColors.primaryButton, color: '#FFFFFF' }}
+                style={{ backgroundColor: themeColors.primaryButton, color: themeColors.darkPrimaryText }}
               >
                 <span className="text-[10px] font-bold tracking-[0.3em] uppercase z-10">View Map</span>
                 <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform z-10" />
-                <div className="absolute inset-0 bg-black/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                <div
+            className="absolute inset-0 translate-y-full group-hover:translate-y-0 transition-transform duration-500"
+            style={{ backgroundColor: `color-mix(in srgb, ${themeColors.sectionBackgroundDark} 10%, transparent)` }}
+          />
               </a>
             </div>
 
@@ -174,13 +180,19 @@ export const ServiceContactFormSection: React.FC<ServiceContactFormSectionProps>
                 />
               </div>
           ) : (
-             <div className="w-full h-full bg-gray-100 flex items-center justify-center grayscale">
+             <div
+               className="w-full h-full flex items-center justify-center grayscale"
+               style={{ backgroundColor: themeColors.sectionBackgroundLight }}
+             >
                 <span className="text-[10px] uppercase tracking-[0.5em] opacity-30 italic">Satellite View Pending</span>
              </div>
           )}
           
           {/* Subtle architectural frame */}
-          <div className="absolute inset-0 border-[20px] border-white/5 pointer-events-none" />
+          <div
+            className="absolute inset-0 border-[20px] pointer-events-none"
+            style={{ borderColor: `color-mix(in srgb, ${themeColors.pageBackground} 5%, transparent)` }}
+          />
         </div>
       </div>
     </section>

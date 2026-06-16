@@ -208,8 +208,8 @@ export const OurServices: React.FC<OurServicesProps> = ({
 
               const card = (
                 <article
-                  className="flex h-full flex-col overflow-hidden rounded-sm border bg-white transition-shadow hover:shadow-md"
-                  style={{ borderColor }}
+                  className="flex h-full flex-col overflow-hidden rounded-sm border transition-shadow hover:shadow-md"
+                  style={{ borderColor, backgroundColor: colors.cardBackground }}
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
                     <OptimizedImage

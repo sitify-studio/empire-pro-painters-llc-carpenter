@@ -12,94 +12,175 @@ import {
   getFooterNavLinks,
 } from '@/app/lib/siteContent';
 import { tiptapToText } from '@/app/lib/seo';
-import { getImageSrc } from '@/app/lib/utils';
+import { cn, getImageSrc } from '@/app/lib/utils';
+
+const WHITE = '#ffffff';
+const BORDER = 'rgba(255,255,255,0.14)';
+
+function formatPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  return phone.trim();
+}
+
+function formatAddressLine(address?: {
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+}): string {
+  if (!address) return '';
+  const cityState = [address.city, address.state].filter(Boolean).join(', ');
+  const main = [address.street, cityState].filter(Boolean).join(' ');
+  return address.zipCode ? `${main} ${address.zipCode}`.trim() : main;
+}
+
+function formatPlatformLabel(platform: string): string {
+  if (platform === 'X') return 'X';
+  return platform.charAt(0).toUpperCase() + platform.slice(1);
+}
+
+function BrandMark({ name }: { name: string }) {
+  const text = (name || 'Brand').toUpperCase();
+  const oIndex = text.indexOf('O');
+
+  if (oIndex === -1) return <span>{text}</span>;
+
+  return (
+    <span>
+      {text.slice(0, oIndex)}
+      <span className="relative inline-block">
+        O
+        <span className="absolute inset-x-0 -bottom-0.5 mx-auto h-[2px] w-[85%] bg-current" aria-hidden />
+      </span>
+      {text.slice(oIndex + 1)}
+    </span>
+  );
+}
+
+function FooterColumnTitle({ children, fonts }: { children: string; fonts: ReturnType<typeof useSectionTheme>['fonts'] }) {
+  return (
+    <p
+      className="mb-5 text-[10px] font-semibold uppercase tracking-[0.32em]"
+      style={{ color: WHITE, fontFamily: fonts.body, opacity: 0.55 }}
+    >
+      {children}
+    </p>
+  );
+}
 
 export function Footer() {
   const { site, pages } = useWebBuilder();
-  const theme = useSectionTheme();
-  const { colors } = theme;
+  const { colors, fonts } = useSectionTheme();
 
   const businessName = useMemo(() => getBrandName(site), [site]);
-  const businessDescription = useMemo(
-    () => tiptapToText(getFooterDescriptionContent(site)),
-    [site]
-  );
   const copyright = useMemo(() => getCopyrightText(site), [site]);
-  const navLinks = useMemo(() => getFooterNavLinks(pages), [pages]);
+  const description = useMemo(() => tiptapToText(getFooterDescriptionContent(site)), [site]);
+  const year = new Date().getFullYear();
 
   const logoSrc = useMemo(() => {
     const url = site?.footer?.logo?.url || site?.theme?.logoUrl;
-    return url ? getImageSrc(url) : '/logo.png';
+    return url ? getImageSrc(url) : '';
   }, [site?.footer?.logo?.url, site?.theme?.logoUrl]);
+
+  const logoAlt = site?.footer?.logo?.altText?.trim() || businessName || 'Logo';
+
+  const pageLinks = useMemo(() => getFooterNavLinks(pages), [pages]);
+
+  const columnLinks = useMemo(() => {
+    return (site?.footer?.columns ?? []).flatMap((column) =>
+      (column.links ?? [])
+        .map((link) => ({
+          label: link.label?.trim() || '',
+          href: link.url?.trim() || '',
+          group: column.title?.trim() || '',
+        }))
+        .filter((link) => link.label && link.href)
+    );
+  }, [site?.footer?.columns]);
+
+  const navLinks = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: Array<{ label: string; href: string }> = [];
+
+    for (const link of pageLinks) {
+      if (seen.has(link.href)) continue;
+      seen.add(link.href);
+      merged.push({ label: link.label, href: link.href });
+    }
+
+    for (const link of columnLinks) {
+      if (seen.has(link.href)) continue;
+      seen.add(link.href);
+      merged.push({ label: link.label, href: link.href });
+    }
+
+    if (merged.length === 0) {
+      return [
+        { label: 'Accessibility Statement', href: '/accessibility-statement' },
+        { label: 'Privacy Policy', href: '/privacy-policy' },
+        { label: 'Terms of Service', href: '/terms-of-service' },
+      ];
+    }
+
+    return merged;
+  }, [pageLinks, columnLinks]);
 
   const socialLinks = useMemo(() => {
     if (site?.footer?.showSocialLinks === false) return [];
     return site?.socialLinks ?? [];
   }, [site?.footer?.showSocialLinks, site?.socialLinks]);
 
+  const phone = site?.business?.phone?.trim() || '';
   const email = site?.business?.email?.trim() || '';
-  const address = site?.business?.address;
-  const primaryColor = colors.mainText;
-  const textColor = '#FFFFFF';
+  const addressLine = formatAddressLine(site?.business?.address);
+
+  const bg = colors.sectionBackgroundDark;
+  const linkClass = 'text-sm transition-opacity hover:opacity-70';
 
   return (
-    <footer
-      id="contact"
-      className="relative pt-20 pb-10 overflow-hidden"
-      style={{ backgroundColor: primaryColor }}
-    >
-      <div
-        className="absolute top-0 right-0 w-1/3 h-full -skew-x-12 translate-x-1/2"
-        style={{ backgroundColor: `${primaryColor}05` }}
-      />
+    <footer id="contact" style={{ backgroundColor: bg, color: WHITE }}>
+      <div className="container mx-auto px-8 py-16 lg:px-12 lg:py-20">
+        <div className="grid grid-cols-1 gap-14 lg:grid-cols-12 lg:gap-12 xl:gap-16">
+          <div className="lg:col-span-5">
+            <Link href="/" className="inline-block no-underline" style={{ color: WHITE, fontFamily: fonts.heading }}>
+              {logoSrc ? (
+                <div className="relative mb-6 h-11 w-40 sm:h-12 sm:w-48">
+                  <Image
+                    src={logoSrc}
+                    alt={logoAlt}
+                    fill
+                    className="object-contain object-left brightness-0 invert"
+                  />
+                </div>
+              ) : (
+                <p className="mb-6 text-[1.1rem] font-normal tracking-[0.1em] sm:text-[1.2rem]">
+                  <BrandMark name={businessName} />
+                </p>
+              )}
+            </Link>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-12 relative z-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-8 sm:gap-12 mb-16 sm:mb-20">
-          <div className="md:col-span-5">
-            <div className="relative w-52 h-16 mb-8">
-              <Image
-                src={logoSrc}
-                alt={businessName || 'Business Name'}
-                fill
-                className="object-contain object-left brightness-0 invert"
-              />
-            </div>
-            {businessDescription && (
-              <p className="text-sm font-light leading-relaxed max-w-sm opacity-60" style={{ color: textColor }}>
-                {businessDescription}
+            {description && (
+              <p
+                className="max-w-md text-sm leading-[1.8] sm:text-[15px]"
+                style={{ color: WHITE, fontFamily: fonts.body, opacity: 0.82 }}
+              >
+                {description}
               </p>
-            )}
-
-            {socialLinks.length > 0 && (
-              <div className="mt-8 flex gap-4">
-                {socialLinks.map((social, index) => (
-                  <a
-                    key={`${social.platform}-${index}`}
-                    href={social.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] font-bold opacity-50 hover:opacity-100 transition-opacity"
-                    style={{ color: textColor }}
-                  >
-                    <span className="w-8 h-px transition-all" style={{ backgroundColor: `${textColor}4D` }} />
-                    {social.platform}
-                  </a>
-                ))}
-              </div>
             )}
           </div>
 
-          <div className="md:col-span-3">
-            <h4 className="text-[10px] font-bold uppercase tracking-[0.5em] opacity-40" style={{ color: textColor }}>
-              Navigation
-            </h4>
-            <nav className="flex flex-col gap-4 mt-6">
+          <div className="lg:col-span-3">
+            <FooterColumnTitle fonts={fonts}>Explore</FooterColumnTitle>
+            <nav className="grid grid-cols-1 gap-y-3 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-1">
               {navLinks.map((link) => (
                 <Link
-                  key={link.id}
+                  key={`${link.href}-${link.label}`}
                   href={link.href}
-                  className="text-sm font-light hover:translate-x-2 transition-transform duration-500"
-                  style={{ color: textColor }}
+                  className={linkClass}
+                  style={{ color: WHITE, fontFamily: fonts.body }}
                 >
                   {link.label}
                 </Link>
@@ -107,57 +188,80 @@ export function Footer() {
             </nav>
           </div>
 
-          <div className="md:col-span-4">
-            <h4 className="text-[10px] font-bold uppercase tracking-[0.5em] opacity-40" style={{ color: textColor }}>
-              Contact
-            </h4>
-            <div className="space-y-6 text-sm font-light mt-6" style={{ color: textColor }}>
-              {email && (
-                <div>
-                  <p className="opacity-40 text-[10px] uppercase tracking-[0.3em] mb-1">Inquiries</p>
-                  <a href={`mailto:${email}`} className="transition-colors" style={{ color: textColor }}>
-                    {email}
-                  </a>
-                </div>
+          <div className="lg:col-span-4">
+            <FooterColumnTitle fonts={fonts}>Contact</FooterColumnTitle>
+            <div className="flex flex-col gap-3">
+              {phone && (
+                <a
+                  href={`tel:${phone.replace(/\s/g, '')}`}
+                  className={linkClass}
+                  style={{ color: WHITE, fontFamily: fonts.body }}
+                >
+                  {formatPhone(phone)}
+                </a>
               )}
-              {address && (address.street || address.city || address.state || address.zipCode) && (
-                <div>
-                  <p className="opacity-40 text-[10px] uppercase tracking-widest mb-1">Office</p>
-                  <address className="not-italic opacity-70">
-                    {address.street && (
-                      <>
-                        {address.street}
-                        <br />
-                      </>
-                    )}
-                    {[address.city, address.state].filter(Boolean).join(', ')}
-                    {address.zipCode ? ` ${address.zipCode}` : ''}
-                  </address>
-                </div>
+              {email && (
+                <a
+                  href={`mailto:${email}`}
+                  className={linkClass}
+                  style={{ color: WHITE, fontFamily: fonts.body }}
+                >
+                  {email}
+                </a>
+              )}
+              {addressLine && (
+                <p className="text-sm leading-relaxed" style={{ color: WHITE, fontFamily: fonts.body, opacity: 0.82 }}>
+                  {addressLine}
+                </p>
               )}
             </div>
+
+            {socialLinks.length > 0 && (
+              <div className="mt-8">
+                <FooterColumnTitle fonts={fonts}>Follow</FooterColumnTitle>
+                <nav className="flex flex-wrap gap-x-6 gap-y-3">
+                  {socialLinks.map((social, index) => (
+                    <a
+                      key={`${social.platform}-${index}`}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(linkClass, 'text-[13px]')}
+                      style={{ color: WHITE, fontFamily: fonts.body }}
+                    >
+                      {formatPlatformLabel(social.platform)}
+                    </a>
+                  ))}
+                </nav>
+              </div>
+            )}
           </div>
         </div>
 
         <div
-          className="pt-8 sm:pt-10 flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6"
-          style={{ borderTop: `1px solid ${textColor}1A` }}
+          className="mt-14 flex flex-col items-center justify-between gap-4 border-t pt-8 sm:flex-row sm:gap-6"
+          style={{ borderColor: BORDER }}
         >
-          <p className="text-[10px] uppercase tracking-[0.5em] opacity-40" style={{ color: textColor }}>
-            {copyright || `© ${new Date().getFullYear()} ${businessName}`}
+          <p className="text-center text-xs sm:text-left sm:text-sm" style={{ color: WHITE, fontFamily: fonts.body, opacity: 0.75 }}>
+            {copyright || `${year} © ${businessName || 'Our Business'}. All Rights Reserved.`}
           </p>
 
-          <div
-            className="flex items-center gap-8 text-[10px] uppercase tracking-[0.5em] opacity-40"
-            style={{ color: textColor }}
-          >
-            <Link href="/privacy-policy" className="hover:opacity-100 transition-opacity">
-              Privacy Policy
-            </Link>
-            <Link href="/terms-of-service" className="hover:opacity-100 transition-opacity">
-              Terms of Service
-            </Link>
-          </div>
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            {[
+              { label: 'Privacy', href: '/privacy-policy' },
+              { label: 'Terms', href: '/terms-of-service' },
+              { label: 'Accessibility', href: '/accessibility-statement' },
+            ].map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-[11px] uppercase tracking-[0.18em] transition-opacity hover:opacity-70"
+                style={{ color: WHITE, fontFamily: fonts.body, opacity: 0.75 }}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
         </div>
       </div>
     </footer>

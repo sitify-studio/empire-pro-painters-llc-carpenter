@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Service, ServiceAreaPage } from '@/app/lib/types';
 import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { useSectionTheme } from '@/app/hooks/useSectionTheme';
 import {
   getBrandName,
-  getBusinessTagline,
   buildHeaderNavEntries,
   type HomeHeaderNavEntry,
 } from '@/app/lib/siteContent';
@@ -20,7 +19,7 @@ import {
   normalizeSlug,
   resolveServiceSlug,
 } from '@/app/lib/serviceAreaSlugs';
-import { cn, getImageSrc } from '@/app/lib/utils';
+import { cn } from '@/app/lib/utils';
 
 type ServiceArea = { city: string; region: string };
 
@@ -122,50 +121,93 @@ function buildServingAreaGroups(
   return groups;
 }
 
-function NavLink({
+function toTitleCase(label: string): string {
+  return label
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function BrandMark({ name, className }: { name: string; className?: string }) {
+  const text = (name || 'Brand').toUpperCase();
+  const oIndex = text.indexOf('O');
+
+  if (oIndex === -1) {
+    return <span className={className}>{text}</span>;
+  }
+
+  return (
+    <span className={className}>
+      {text.slice(0, oIndex)}
+      <span className="relative inline-block">
+        O
+        <span className="absolute inset-x-0 -bottom-0.5 mx-auto h-[2px] w-[85%] bg-current" aria-hidden />
+      </span>
+      {text.slice(oIndex + 1)}
+    </span>
+  );
+}
+
+function useIsActivePath() {
+  const pathname = usePathname();
+
+  return (href: string) => {
+    if (!href || href.startsWith('http') || href.startsWith('tel:') || href.startsWith('mailto:')) {
+      return false;
+    }
+    const path = href.split(/[?#]/)[0] || '/';
+    if (path === '/') return pathname === '/';
+    return pathname === path || pathname.startsWith(`${path}/`);
+  };
+}
+
+function HeaderNavLink({
   href,
   children,
-  accentColor,
+  isActive,
+  fonts,
+  activeColor,
+  textColor,
   onClick,
+  className,
 }: {
   href: string;
   children: ReactNode;
-  accentColor: string;
+  isActive: boolean;
+  fonts: ReturnType<typeof useSectionTheme>['fonts'];
+  activeColor: string;
+  textColor: string;
   onClick?: () => void;
+  className?: string;
 }) {
   return (
     <Link
       href={href}
       onClick={onClick}
-      className="group relative text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600 transition-colors hover:text-slate-900"
+      className={cn('text-[15px] font-normal leading-none transition-colors duration-300', className)}
+      style={{
+        fontFamily: fonts.heading,
+        color: isActive ? activeColor : textColor,
+      }}
+      aria-current={isActive ? 'page' : undefined}
     >
       {children}
-      <span
-        className="absolute -bottom-2 left-0 h-px w-0 transition-all duration-500 group-hover:w-full"
-        style={{ backgroundColor: accentColor }}
-      />
     </Link>
   );
 }
 
 export function Header() {
-  const { site, pages, services, serviceAreaPages } = useWebBuilder();
-  const theme = useSectionTheme();
-  const { colors, fonts } = theme;
+  const { site, pages, services, serviceAreaPages, loading } = useWebBuilder();
+  const { colors, fonts } = useSectionTheme();
+  const isActivePath = useIsActivePath();
 
   const [isOpen, setIsOpen] = useState(false);
   const [activeServiceIndex, setActiveServiceIndex] = useState<number | null>(0);
   const [mobileAreasOpen, setMobileAreasOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   const businessName = useMemo(() => getBrandName(site), [site]);
-  const tagline = useMemo(() => getBusinessTagline(site) || '', [site]);
   const phoneNumber = site?.business?.phone?.trim() || site?.business?.emergencyPhone?.trim() || '';
-  const logoImage = useMemo(() => {
-    const url = site?.theme?.logoUrl || site?.footer?.logo?.url;
-    return url ? getImageSrc(url) : '/logo.png';
-  }, [site?.theme?.logoUrl, site?.footer?.logo?.url]);
 
   const servingAreaGroups = useMemo(
     () => buildServingAreaGroups(services, serviceAreaPages, site?.serviceAreas),
@@ -180,14 +222,11 @@ export function Header() {
     [pages, servingAreaGroups.length]
   );
 
-  const accentColor = colors.primaryButton;
+  const activeColor = colors.primaryButton;
+  const textColor = colors.mainText;
 
   useEffect(() => {
     setIsMounted(true);
-    const handleScroll = () => setScrolled(window.scrollY > 24);
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -212,42 +251,32 @@ export function Header() {
     setMobileAreasOpen(false);
   };
 
-  const servingAreasDropdown = (className?: string) =>
+  const servingAreasDropdown = () =>
     servingAreaGroups.length > 0 ? (
-      <div className={cn('group relative py-3', className)}>
+      <div className="group relative">
         <button
           type="button"
-          className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600 transition-colors group-hover:text-slate-900"
+          className="text-[15px] font-normal leading-none transition-colors duration-300"
+          style={{ fontFamily: fonts.heading, color: textColor }}
         >
           Areas
-          <svg
-            className="h-2.5 w-2.5 opacity-50 transition-transform duration-300 group-hover:rotate-180"
-            viewBox="0 0 12 12"
-            fill="currentColor"
-          >
-            <path d="M2 4l4 4 4-4" />
-          </svg>
         </button>
 
-        <div className="invisible absolute left-1/2 top-full z-50 w-[min(100vw-3rem,640px)] -translate-x-1/2 pt-3 opacity-0 transition-all duration-300 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-          <div className="flex overflow-hidden border border-slate-200 bg-white">
-            <div className="w-[36%] shrink-0 border-r border-slate-200 py-2">
+        <div className="invisible absolute right-0 top-full z-50 w-[min(100vw-2rem,520px)] pt-4 opacity-0 transition-all duration-300 group-hover:visible group-hover:opacity-100">
+          <div className="flex overflow-hidden border bg-white shadow-[0_20px_60px_rgba(15,15,15,0.08)]" style={{ borderColor: `color-mix(in srgb, ${textColor} 12%, transparent)` }}>
+            <div className="w-[38%] shrink-0 border-r py-2" style={{ borderColor: `color-mix(in srgb, ${textColor} 10%, transparent)` }}>
               {servingAreaGroups.map((group, idx) => (
                 <button
                   key={group.serviceSlug}
                   type="button"
                   onMouseEnter={() => setActiveServiceIndex(idx)}
                   className={cn(
-                    'w-full px-4 py-3 text-left text-[9px] font-bold uppercase tracking-[0.26em] transition-colors',
-                    activeServiceIndex === idx
-                      ? 'text-slate-900'
-                      : 'text-slate-400 hover:text-slate-600'
+                    'w-full px-4 py-2.5 text-left text-sm transition-colors',
+                    activeServiceIndex === idx ? 'opacity-100' : 'opacity-50 hover:opacity-80'
                   )}
                   style={{
-                    borderLeft:
-                      activeServiceIndex === idx
-                        ? `2px solid ${accentColor}`
-                        : '2px solid transparent',
+                    fontFamily: fonts.heading,
+                    color: textColor,
                   }}
                 >
                   {group.label}
@@ -255,9 +284,9 @@ export function Header() {
               ))}
             </div>
 
-            <div className="flex-1 px-5 py-4">
+            <div className="flex-1 px-4 py-3">
               {isMounted && activeServiceIndex !== null && (
-                <div className="grid grid-cols-2 gap-x-6 gap-y-2.5">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   {servingAreaGroups[activeServiceIndex]?.areas.map((area, idx) => (
                     <Link
                       key={idx}
@@ -266,11 +295,9 @@ export function Header() {
                         area,
                         serviceAreaPages
                       )}
-                      className="group/area inline-flex items-center gap-2.5 text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500 transition-colors hover:text-slate-900"
+                      className="text-sm transition-opacity hover:opacity-70"
+                      style={{ fontFamily: fonts.body, color: textColor }}
                     >
-                      <span className="text-[10px] text-slate-300 transition-colors group-hover/area:text-slate-900">
-                        +
-                      </span>
                       {area.city}
                     </Link>
                   ))}
@@ -282,156 +309,101 @@ export function Header() {
       </div>
     ) : null;
 
+  if (loading) return null;
+
   return (
     <>
-      <header
-        className={cn(
-          'fixed inset-x-0 top-0 z-[100] transition-all duration-500',
-          scrolled
-            ? 'border-b border-slate-200/80 bg-white/95 backdrop-blur-md shadow-[0_8px_30px_-20px_rgba(0,0,0,0.15)]'
-            : 'bg-transparent'
-        )}
-      >
-        <div className="container mx-auto px-6 lg:px-12">
-          <div className="grid h-14 grid-cols-[auto_1fr_auto] items-center gap-6 lg:grid-cols-[1fr_auto_1fr]">
-            <Link href="/" className="flex min-w-0 items-center gap-3 group">
-              <Image
-                src={logoImage}
-                alt={businessName || 'Logo'}
-                width={80}
-                height={80}
-                className="h-9 w-9 shrink-0 object-contain lg:h-10 lg:w-10"
-              />
-              <div className="min-w-0 border-l border-slate-200/80 pl-3">
-                <span
-                  className="block truncate text-[10px] font-bold uppercase tracking-[0.28em] text-slate-900"
-                  style={{ fontFamily: fonts.heading }}
+      <header className="fixed inset-x-0 top-0 z-[100] border-b bg-white" style={{ borderColor: `color-mix(in srgb, ${textColor} 8%, transparent)` }}>
+        <div className="container mx-auto flex h-16 items-center justify-between px-8 lg:h-[4.5rem] lg:px-12">
+          <Link
+            href="/"
+            className="shrink-0 no-underline"
+            style={{ color: textColor, fontFamily: fonts.heading }}
+          >
+            <BrandMark
+              name={businessName}
+              className="text-[1.05rem] font-normal tracking-[0.12em] sm:text-[1.15rem]"
+            />
+          </Link>
+
+          <nav className="hidden items-center gap-8 lg:flex">
+            {homeNavEntries.map((entry) =>
+              entry.kind === 'anchor' ? (
+                <HeaderNavLink
+                  key={entry.id}
+                  href={entry.href}
+                  isActive={isActivePath(entry.href)}
+                  fonts={fonts}
+                  activeColor={activeColor}
+                  textColor={textColor}
                 >
-                  {businessName || 'Brand'}
-                </span>
-                {tagline && (
-                  <span className="mt-0.5 hidden truncate text-[8px] font-medium uppercase tracking-[0.34em] text-slate-500 sm:block">
-                    {tagline}
-                  </span>
-                )}
-              </div>
-            </Link>
+                  {toTitleCase(entry.name)}
+                </HeaderNavLink>
+              ) : (
+                <div key="serving-areas">{servingAreasDropdown()}</div>
+              )
+            )}
+          </nav>
 
-            <nav className="hidden items-center justify-center gap-8 lg:flex">
-              {homeNavEntries.map((entry) =>
-                entry.kind === 'anchor' ? (
-                  <NavLink key={entry.id} href={entry.href} accentColor={accentColor}>
-                    {entry.name}
-                  </NavLink>
-                ) : (
-                  <div key="serving-areas">{servingAreasDropdown()}</div>
-                )
-              )}
-            </nav>
-
-            <div className="flex items-center justify-end gap-4">
-              {phoneNumber && (
-                <Link
-                  href={`tel:${phoneNumber.replace(/\s/g, '')}`}
-                  className="group hidden items-center gap-3 lg:inline-flex"
-                >
-                  <div className="text-right">
-                    <span className="block text-[8px] font-bold uppercase tracking-[0.28em] text-slate-400">
-                      Direct Line
-                    </span>
-                    <span className="text-[10px] font-medium tracking-[0.12em] text-slate-700">
-                      {phoneNumber}
-                    </span>
-                  </div>
-                  <div
-                    className="h-px w-6 transition-all duration-500 group-hover:w-10"
-                    style={{ backgroundColor: accentColor }}
-                  />
-                </Link>
-              )}
-
-              <button
-                type="button"
-                onClick={() => setIsOpen((open) => !open)}
-                aria-label={isOpen ? 'Close menu' : 'Open menu'}
-                className="relative z-[110] p-2 lg:hidden"
-              >
-                <div className="flex w-7 flex-col items-end gap-1.5">
-                  <span
-                    className={cn(
-                      'block h-px w-7 bg-slate-900 transition-all duration-500',
-                      isOpen && 'translate-y-[5px] rotate-45'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'block h-px bg-slate-900 transition-all duration-500',
-                      isOpen ? 'w-0 opacity-0' : 'w-5'
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'block h-px bg-slate-900 transition-all duration-500',
-                      isOpen ? 'w-7 -translate-y-[5px] -rotate-45' : 'w-3'
-                    )}
-                  />
-                </div>
-              </button>
+          <button
+            type="button"
+            onClick={() => setIsOpen((open) => !open)}
+            aria-label={isOpen ? 'Close menu' : 'Open menu'}
+            className="relative z-[110] p-2 lg:hidden"
+            style={{ color: textColor }}
+          >
+            <div className="flex w-6 flex-col items-end gap-1.5">
+              <span className={cn('block h-px w-6 bg-current transition-all duration-300', isOpen && 'translate-y-[5px] rotate-45')} />
+              <span className={cn('block h-px bg-current transition-all duration-300', isOpen ? 'w-0 opacity-0' : 'w-4')} />
+              <span className={cn('block h-px bg-current transition-all duration-300', isOpen ? 'w-6 -translate-y-[5px] -rotate-45' : 'w-2.5')} />
             </div>
-          </div>
+          </button>
         </div>
       </header>
 
       <div
         className={cn(
-          'fixed inset-0 z-[105] bg-white transition-all duration-500 lg:hidden',
-          isOpen ? 'visible opacity-100' : 'invisible opacity-0 pointer-events-none'
+          'fixed inset-0 z-[105] bg-white transition-all duration-300 lg:hidden',
+          isOpen ? 'visible opacity-100' : 'pointer-events-none invisible opacity-0'
         )}
       >
-        <div className="flex h-full flex-col px-6 pb-10 pt-20">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="h-px w-8" style={{ backgroundColor: accentColor }} />
-            <span
-              className="text-[10px] font-bold uppercase tracking-[0.4em]"
-              style={{ color: accentColor }}
-            >
-              Menu
-            </span>
-          </div>
-
-          <nav className="flex flex-1 flex-col gap-6">
+        <div className="flex h-full flex-col px-8 pb-10 pt-20">
+          <nav className="flex flex-1 flex-col gap-5">
             {homeNavEntries.map((entry) =>
               entry.kind === 'anchor' ? (
-                <Link
+                <HeaderNavLink
                   key={entry.id}
                   href={entry.href}
+                  isActive={isActivePath(entry.href)}
+                  fonts={fonts}
+                  activeColor={activeColor}
+                  textColor={textColor}
                   onClick={closeMenu}
-                  className="text-2xl font-light tracking-tight text-slate-900"
-                  style={{ fontFamily: fonts.heading }}
+                  className="text-2xl"
                 >
-                  {entry.name}
-                </Link>
+                  {toTitleCase(entry.name)}
+                </HeaderNavLink>
               ) : (
                 servingAreaGroups.length > 0 && (
                   <div key="serving-areas">
                     <button
                       type="button"
                       onClick={() => setMobileAreasOpen((open) => !open)}
-                      className="flex w-full items-center justify-between text-2xl font-light tracking-tight text-slate-900"
-                      style={{ fontFamily: fonts.heading }}
+                      className="text-left text-2xl font-normal"
+                      style={{ fontFamily: fonts.heading, color: textColor }}
                     >
                       Areas
-                      <span className="text-sm text-slate-400">{mobileAreasOpen ? '−' : '+'}</span>
                     </button>
 
                     {mobileAreasOpen && (
-                      <div className="mt-4 space-y-6 border-t border-slate-200 pt-4">
+                      <div className="mt-4 space-y-5 border-t pt-4" style={{ borderColor: `color-mix(in srgb, ${textColor} 12%, transparent)` }}>
                         {servingAreaGroups.map((group) => (
                           <div key={group.serviceSlug}>
                             <Link
                               href={group.href}
                               onClick={closeMenu}
-                              className="mb-3 block text-[10px] font-bold uppercase tracking-[0.28em] text-slate-900"
+                              className="mb-2 block text-sm"
+                              style={{ fontFamily: fonts.heading, color: textColor }}
                             >
                               {group.label}
                             </Link>
@@ -441,7 +413,8 @@ export function Header() {
                                   key={idx}
                                   href={getServiceAreaPageHref(group.serviceSlug, area, serviceAreaPages)}
                                   onClick={closeMenu}
-                                  className="text-[10px] uppercase tracking-[0.18em] text-slate-500"
+                                  className="text-sm opacity-70"
+                                  style={{ fontFamily: fonts.body, color: textColor }}
                                 >
                                   {area.city}
                                 </Link>
@@ -458,14 +431,11 @@ export function Header() {
           </nav>
 
           {phoneNumber && (
-            <div className="border-t border-slate-200 pt-6">
-              <span className="mb-2 block text-[10px] font-bold uppercase tracking-[0.35em] text-slate-400">
-                Direct Line
-              </span>
+            <div className="border-t pt-6" style={{ borderColor: `color-mix(in srgb, ${textColor} 12%, transparent)` }}>
               <a
                 href={`tel:${phoneNumber.replace(/\s/g, '')}`}
-                className="text-lg font-light tracking-tight text-slate-900"
-                style={{ fontFamily: fonts.heading }}
+                className="text-lg"
+                style={{ fontFamily: fonts.heading, color: textColor }}
               >
                 {phoneNumber}
               </a>

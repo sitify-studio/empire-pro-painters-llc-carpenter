@@ -6,6 +6,7 @@ import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { Footer } from '@/app/components/layout/Footer';
 import { ServingAreasdetailSection } from '@/app/components/sections/ServingAreasdetailSection';
 import api from '@/app/lib/fetch-api';
+import { useThemeColors } from '@/app/hooks/useTheme';
 
 interface ServiceAreaClientProps {
   serviceSlug: string;
@@ -21,6 +22,7 @@ export default function ServiceAreaClient({
   const citySlug = (params.citySlug as string) || citySlugProp;
 
   const { site } = useWebBuilder();
+  const themeColors = useThemeColors();
   const [serviceAreaPage, setServiceAreaPage] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,10 +56,13 @@ export default function ServiceAreaClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: themeColors.pageBackground }}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading service area page...</p>
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+            style={{ borderColor: themeColors.primaryButton }}
+          />
+          <p style={{ color: themeColors.secondaryText }}>Loading service area page...</p>
         </div>
       </div>
     );
@@ -65,11 +70,11 @@ export default function ServiceAreaClient({
 
   if (error || !serviceAreaPage) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: themeColors.pageBackground }}>
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Service Area Not Found</h2>
-          <p className="text-gray-600 mb-4">The service area page could not be found.</p>
-          <a href="/" className="inline-block text-blue-600 hover:underline">
+          <h2 className="text-2xl font-bold mb-4" style={{ color: themeColors.mainText }}>Service Area Not Found</h2>
+          <p className="mb-4" style={{ color: themeColors.secondaryText }}>The service area page could not be found.</p>
+          <a href="/" className="inline-block hover:underline" style={{ color: themeColors.primaryButton }}>
             Return Home
           </a>
         </div>

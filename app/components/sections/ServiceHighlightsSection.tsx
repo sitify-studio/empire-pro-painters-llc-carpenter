@@ -110,7 +110,7 @@ export const ServiceHighlightsSection: React.FC<ServiceHighlightsSectionProps> =
     <section
       ref={sectionRef}
       className={cn('relative py-3 md:py-8 lg:py-12 overflow-hidden', className)}
-      style={{ backgroundColor: themeColors.sectionBackground || '#FFFFFF' }}
+      style={{ backgroundColor: themeColors.sectionBackgroundLight }}
     >
       <div className="max-w-[1800px] mx-auto px-8 md:px-16 lg:px-24">
         
@@ -161,12 +161,12 @@ export const ServiceHighlightsSection: React.FC<ServiceHighlightsSectionProps> =
 
                 <div className="">
                   {highlight.title && (
-                    <h4 className="text-sm font-semibold leading-snug text-slate-900">
+                    <h4 className="text-sm font-semibold leading-snug" style={{ color: primaryTextColor }}>
                       <TiptapRenderer content={highlight.title} as="inline" />
                     </h4>
                   )}
                   {highlight.description && (
-                    <div className="max-w-[240px] text-sm font-light leading-relaxed text-slate-600">
+                    <div className="max-w-[240px] text-sm font-light leading-relaxed" style={{ color: secondaryTextColor }}>
                       <TiptapRenderer content={highlight.description} as="inline" className="text-inherit" />
                     </div>
                   )}

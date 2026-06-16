@@ -92,9 +92,11 @@ export const CTA2Section: React.FC<CTA2SectionProps> = ({ cta2Section, className
   const eyebrow = site?.business?.tagline?.trim() || 'Start Your Project';
 
   const panelBg = hasBgImage
-    ? 'rgba(8, 8, 8, 0.52)'
+    ? `color-mix(in srgb, ${themeColors.sectionBackgroundDark} 52%, transparent)`
     : `color-mix(in srgb, ${themeColors.sectionBackground} 92%, transparent)`;
-  const panelBorder = hasBgImage ? 'rgba(255,255,255,0.18)' : `${themeColors.inactive}40`;
+  const panelBorder = hasBgImage
+    ? `color-mix(in srgb, ${themeColors.darkPrimaryText} 18%, transparent)`
+    : `${themeColors.inactive}40`;
 
   return (
     <section
@@ -105,7 +107,7 @@ export const CTA2Section: React.FC<CTA2SectionProps> = ({ cta2Section, className
         className
       )}
       style={{
-        backgroundColor: customBg || (hasBgImage ? '#0c0c0c' : themeColors.sectionBackground),
+        backgroundColor: customBg || (hasBgImage ? themeColors.sectionBackgroundDark : themeColors.sectionBackground),
         fontFamily: themeFonts.body,
       }}
     >
@@ -122,7 +124,10 @@ export const CTA2Section: React.FC<CTA2SectionProps> = ({ cta2Section, className
             />
           </div>
           <div
-            className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/20"
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(to top, color-mix(in srgb, ${themeColors.sectionBackgroundDark} 35%, transparent), transparent, color-mix(in srgb, ${themeColors.sectionBackgroundDark} 20%, transparent))`,
+            }}
             aria-hidden
           />
         </div>
@@ -155,7 +160,7 @@ export const CTA2Section: React.FC<CTA2SectionProps> = ({ cta2Section, className
         >
           <span
             className="pointer-events-none absolute -right-2 -top-3 select-none text-[clamp(4rem,12vw,7rem)] font-extralight leading-none opacity-[0.07]"
-            style={{ color: hasBgImage ? '#fff' : themeColors.mainText, fontFamily: themeFonts.heading }}
+            style={{ color: hasBgImage ? themeColors.darkPrimaryText : themeColors.mainText, fontFamily: themeFonts.heading }}
             aria-hidden
           >
             →
@@ -164,11 +169,11 @@ export const CTA2Section: React.FC<CTA2SectionProps> = ({ cta2Section, className
           <div className="mb-6 flex items-center gap-3">
             <div className="h-px w-10 shrink-0" style={{ backgroundColor: brandColor }} />
             <span
-              className={cn(
-                'text-[10px] font-semibold uppercase tracking-[0.38em]',
-                hasBgImage ? 'text-white/70' : contrast.textSecondary
-              )}
-              style={{ fontFamily: themeFonts.body }}
+              className="text-[10px] font-semibold uppercase tracking-[0.38em]"
+              style={{
+                fontFamily: themeFonts.body,
+                color: hasBgImage ? themeColors.darkSecondaryText : undefined,
+              }}
             >
               {eyebrow}
             </span>
@@ -179,9 +184,12 @@ export const CTA2Section: React.FC<CTA2SectionProps> = ({ cta2Section, className
               data-cta2-reveal
               className={cn(
                 'text-balance text-[clamp(1.75rem,4.2vw,3.25rem)] font-light uppercase leading-[1.02] tracking-[-0.02em]',
-                hasBgImage ? 'text-white' : contrast.textPrimary
+                !hasBgImage && contrast.textPrimary
               )}
-              style={{ fontFamily: themeFonts.heading }}
+              style={{
+                fontFamily: themeFonts.heading,
+                color: hasBgImage ? themeColors.darkPrimaryText : undefined,
+              }}
             >
               <TiptapRenderer content={safeCta.title} as="inline" className={TIPTAP_INHERIT} />
             </h2>
@@ -192,9 +200,12 @@ export const CTA2Section: React.FC<CTA2SectionProps> = ({ cta2Section, className
               data-cta2-reveal
               className={cn(
                 'mt-6 max-w-xl text-sm font-light leading-relaxed md:text-base',
-                hasBgImage ? 'text-white/85' : contrast.textSecondary
+                !hasBgImage && contrast.textSecondary
               )}
-              style={{ fontFamily: themeFonts.body }}
+              style={{
+                fontFamily: themeFonts.body,
+                color: hasBgImage ? themeColors.darkSecondaryText : undefined,
+              }}
             >
               <TiptapRenderer content={safeCta.description} className={TIPTAP_INHERIT} />
             </div>
@@ -207,14 +218,17 @@ export const CTA2Section: React.FC<CTA2SectionProps> = ({ cta2Section, className
                 className="group inline-flex items-center gap-4 rounded-full px-8 py-4 transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98]"
                 style={{
                   backgroundColor: brandColor,
-                  color: '#ffffff',
+                  color: themeColors.darkPrimaryText,
                   fontFamily: themeFonts.body,
                 }}
               >
                 <span className="text-[11px] font-semibold uppercase tracking-[0.32em]">
                   {safeCta.primaryButton.label}
                 </span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-transform duration-300 group-hover:rotate-45">
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-300 group-hover:rotate-45"
+                  style={{ backgroundColor: `color-mix(in srgb, ${themeColors.darkPrimaryText} 15%, transparent)` }}
+                >
                   <ArrowUpRight size={16} />
                 </span>
               </Link>
