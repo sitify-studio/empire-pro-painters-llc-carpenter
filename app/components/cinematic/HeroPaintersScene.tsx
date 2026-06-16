@@ -85,7 +85,7 @@ function PainterLeft() {
       {/* right arm + roller */}
       <g transform="rotate(-32 128 250)">
         <rect x="118" y="238" width="14" height="40" rx="7" fill={C.yellow} />
-        <PaintRollerShort x="125" y="232" />
+        <PaintRollerShort x={125} y={232} />
       </g>
     </g>
   );
@@ -113,7 +113,7 @@ function PainterRight() {
       {/* arm + long roller */}
       <g transform="rotate(-8 310 250)">
         <rect x="300" y="240" width="14" height="48" rx="7" fill={C.white} />
-        <PaintRollerPole x="307" y="236" />
+        <PaintRollerPole x={307} y={236} />
       </g>
     </g>
   );
@@ -142,7 +142,7 @@ function SceneSvg() {
       <path d="M155 200 Q200 185 245 205 L235 245 Q190 258 150 235 Z" fill={C.wallPatch} opacity="0.85" />
 
       {/* center bucket */}
-      <PaintBucket x="198" y="292" color={C.white} />
+      <PaintBucket x={198} y={292} color={C.white} />
 
       {/* paint tray stand */}
       <g transform="translate(318, 300)">
