@@ -1,6 +1,6 @@
 import type { Page, Site } from '@/app/lib/types';
 import { getImageSrc } from '@/app/lib/utils';
-import { tiptapToText } from '@/app/lib/seo';
+import { tiptapToText, stripHtml } from '@/app/lib/seo';
 
 export function getBrandName(site?: Site | null): string {
   return site?.business?.name?.trim() || site?.name?.trim() || '';
@@ -374,10 +374,37 @@ export function buildHeaderNavEntries(pages?: Page[]): HomeHeaderNavEntry[] {
   }));
 }
 
-export function getCopyrightText(site?: Site | null): string {
-  const footerCopyright = tiptapToText(site?.footer?.copyright);
-  if (footerCopyright) return footerCopyright;
-  return `©${new Date().getFullYear()}`;
+export function getCopyrightContent(site?: Site | null, page?: Page | null): unknown {
+  const pageOverride =
+    page?.footerOverrides?.enabled && page.footerOverrides.copyright?.trim()
+      ? page.footerOverrides.copyright.trim()
+      : '';
+
+  if (pageOverride) return pageOverride;
+
+  const footerCopyright = site?.footer?.copyright;
+  if (footerCopyright == null || footerCopyright === '') return null;
+  if (typeof footerCopyright === 'string' && !footerCopyright.trim()) return null;
+
+  return footerCopyright;
+}
+
+function applyCopyrightTokens(text: string): string {
+  const year = String(new Date().getFullYear());
+  return text
+    .replace(/\{\{\s*year\s*\}\}/gi, year)
+    .replace(/\{\s*year\s*\}/gi, year)
+    .replace(/\[\s*year\s*\]/gi, year);
+}
+
+export function getCopyrightText(site?: Site | null, page?: Page | null): string {
+  const raw = getCopyrightContent(site, page);
+  if (!raw) return '';
+
+  const text = tiptapToText(raw);
+  if (text) return applyCopyrightTokens(text);
+
+  return typeof raw === 'string' ? applyCopyrightTokens(stripHtml(raw)) : '';
 }
 
 export function getPrimaryHeroImageFromPages(pages?: Page[]): string {

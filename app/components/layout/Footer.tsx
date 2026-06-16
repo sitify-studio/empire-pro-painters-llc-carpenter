@@ -7,12 +7,13 @@ import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { useSectionTheme } from '@/app/hooks/useSectionTheme';
 import {
   getBrandName,
-  getCopyrightText,
+  getCopyrightContent,
   getFooterDescriptionContent,
   getFooterNavLinks,
   isLegalNavHref,
 } from '@/app/lib/siteContent';
 import { tiptapToText } from '@/app/lib/seo';
+import { TiptapRenderer } from '@/app/components/ui/TiptapRenderer';
 import { cn, getImageSrc } from '@/app/lib/utils';
 
 const WHITE = '#ffffff';
@@ -84,13 +85,20 @@ function FooterColumnTitle({ children, fonts }: { children: string; fonts: Retur
 }
 
 export function Footer() {
-  const { site, pages } = useWebBuilder();
+  const { site, pages, currentPage } = useWebBuilder();
   const { colors, fonts } = useSectionTheme();
 
   const businessName = useMemo(() => getBrandName(site), [site]);
-  const copyright = useMemo(() => getCopyrightText(site), [site]);
+  const homePage = useMemo(() => pages.find((p) => p.pageType === 'home'), [pages]);
+  const copyrightContent = useMemo(
+    () => getCopyrightContent(site, currentPage ?? homePage),
+    [site, currentPage, homePage]
+  );
+  const copyrightFallback = useMemo(() => {
+    const year = new Date().getFullYear();
+    return `${year} © ${businessName || 'Our Business'}. All Rights Reserved.`;
+  }, [businessName]);
   const description = useMemo(() => tiptapToText(getFooterDescriptionContent(site)), [site]);
-  const year = new Date().getFullYear();
 
   const logoSrc = useMemo(() => {
     const url = site?.footer?.logo?.url || site?.theme?.logoUrl;
@@ -248,15 +256,22 @@ export function Footer() {
         </div>
 
         <div
-          className="mt-14 flex flex-col items-center justify-between gap-4 border-t pt-8 sm:flex-row sm:gap-6"
+          className="mt-14 flex flex-col gap-4 border-t pt-8 lg:flex-row lg:items-start lg:justify-between lg:gap-8"
           style={{ borderColor: BORDER }}
         >
-          <p className="text-center text-xs sm:text-left sm:text-sm" style={{ color: WHITE, fontFamily: fonts.body, opacity: 0.75 }}>
-            {copyright || `${year} © ${businessName || 'Our Business'}. All Rights Reserved.`}
-          </p>
+          <div
+            className="min-w-0 flex-1 text-center text-xs leading-relaxed sm:text-left sm:text-sm [&_a]:text-white [&_a]:underline [&_a]:underline-offset-2 [&_a]:transition-opacity [&_a:hover]:opacity-70"
+            style={{ color: WHITE, fontFamily: fonts.body, opacity: 0.75 }}
+          >
+            {copyrightContent ? (
+              <TiptapRenderer content={copyrightContent} as="inline" />
+            ) : (
+              copyrightFallback
+            )}
+          </div>
 
           {legalLinks.length > 0 && (
-            <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <nav className="flex shrink-0 flex-wrap items-center justify-center gap-x-5 gap-y-2 lg:justify-end">
               {legalLinks.map((link) => (
                 <Link
                   key={link.href}

@@ -12,7 +12,7 @@ import {
   CraftSection,
   CRAFT_DESC_CLASS,
   CRAFT_TITLE_CLASS,
-  useCraftTheme,
+  useCraftSurfaceContrast,
 } from '@/app/components/sections/CraftSection';
 import { ContactSideForm } from '@/app/components/ui/ContactSideForm';
 
@@ -34,7 +34,8 @@ interface ContactSectionProps {
 export function ContactSection({ contactSection, className }: ContactSectionProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { site } = useWebBuilder();
-  const { colors, accentColor, borderColor } = useCraftTheme();
+  const { accentColor, borderColor, textPrimary, isDark } = useCraftSurfaceContrast('muted');
+  const textColor = textPrimary;
 
   const title = useMemo(() => tiptapToText(contactSection?.title), [contactSection?.title]);
   const description = useMemo(
@@ -95,6 +96,7 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
               eyebrow="Contact"
               title={title || 'Get in touch'}
               description={description}
+              variant={isDark ? 'dark' : 'light'}
               titleClassName={CRAFT_TITLE_CLASS}
               descriptionClassName={cn(CRAFT_DESC_CLASS, 'max-w-md')}
             />
@@ -107,7 +109,7 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
               >
                 <span
                   className="text-[11px] font-bold uppercase tracking-[0.3em]"
-                  style={{ color: colors.mainText }}
+                  style={{ color: textColor }}
                 >
                   Send a Message
                 </span>
@@ -127,9 +129,9 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
                 <a
                   href={`mailto:${business.email}`}
                   className="text-sm font-light transition-colors"
-                  style={{ color: colors.secondaryText }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = colors.mainText; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = colors.secondaryText; }}
+                  style={{ color: textColor }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
                 >
                   {business.email}
                 </a>
@@ -142,9 +144,9 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
                     'block text-sm font-light transition-colors',
                     business?.email && 'mt-3'
                   )}
-                  style={{ color: colors.secondaryText }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = colors.mainText; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = colors.secondaryText; }}
+                  style={{ color: textColor }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
                 >
                   {business.phone}
                 </a>
@@ -153,7 +155,7 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
               {showContactInfo && addressLine && (
                 <p
                   className={cn('text-sm font-light leading-relaxed', (business?.email || business?.phone) && 'mt-3')}
-                  style={{ color: colors.secondaryText }}
+                  style={{ color: textColor }}
                 >
                   {addressLine}
                 </p>
@@ -168,7 +170,7 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
                 >
                   <span
                     className="mb-6 block text-[10px] font-bold uppercase tracking-[0.35em]"
-                    style={{ color: accentColor }}
+                    style={{ color: textColor }}
                   >
                     Hours
                   </span>
@@ -177,9 +179,9 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
                       <div
                         key={day.day}
                         className="flex justify-between gap-8 text-sm font-light"
-                        style={{ color: colors.secondaryText }}
+                        style={{ color: textColor }}
                       >
-                        <span style={{ color: colors.mainText }}>{DAY_LABELS[day.day]}</span>
+                        <span>{DAY_LABELS[day.day]}</span>
                         <span>{formatDayHours(day)}</span>
                       </div>
                     ))}
@@ -225,7 +227,7 @@ export function ContactSection({ contactSection, className }: ContactSectionProp
             ) : (
               <div
                 className="flex h-full items-center justify-center text-sm font-light"
-                style={{ color: colors.secondaryText }}
+                style={{ color: textColor }}
               >
                 Map coordinates not configured
               </div>

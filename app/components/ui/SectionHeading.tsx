@@ -51,7 +51,7 @@ export function SectionHeading({
           <div className="h-px w-10 shrink-0" style={{ backgroundColor: accentColor }} />
           <span
             className="text-[10px] font-bold uppercase tracking-[0.5em]"
-            style={{ color: accentColor, fontFamily: fonts.body }}
+            style={{ color: isDark ? colors.darkPrimaryText : accentColor, fontFamily: fonts.body }}
           >
             {eyebrow}
           </span>
@@ -81,7 +81,7 @@ export function SectionHeading({
           )}
           style={{
             fontFamily: fonts.body,
-            color: isDark ? colors.darkSecondaryText : colors.secondaryText,
+            color: isDark ? colors.darkPrimaryText : colors.secondaryText,
           }}
         >
           {description}

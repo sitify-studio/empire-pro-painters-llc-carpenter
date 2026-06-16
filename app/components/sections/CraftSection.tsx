@@ -3,10 +3,26 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { HomeDotGrid } from '@/app/components/ui/made';
+import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
 import { useSectionTheme } from '@/app/hooks/useSectionTheme';
-import { cn } from '@/app/lib/utils';
+import type { Site } from '@/app/lib/types';
+import { cn, pageSurfaceToneFromBackground } from '@/app/lib/utils';
 
 export type CraftSurface = 'page' | 'muted' | 'accent' | 'dark';
+
+function getCraftSurfaceBgHex(surface: CraftSurface, theme?: Site['theme']): string | undefined {
+  if (!theme) return undefined;
+  switch (surface) {
+    case 'muted':
+      return theme.sectionBackgroundColorLight;
+    case 'dark':
+      return theme.sectionBackgroundColorDark;
+    case 'accent':
+      return theme.sectionBackgroundColorLight;
+    default:
+      return theme.pageBackgroundColor;
+  }
+}
 
 export function useCraftTheme() {
   const theme = useSectionTheme();
@@ -15,6 +31,20 @@ export function useCraftTheme() {
   const borderColor = `color-mix(in srgb, ${colors.mainText} 12%, transparent)`;
 
   return { colors, fonts, accentColor, borderColor };
+}
+
+export function useCraftSurfaceContrast(surface: CraftSurface = 'page') {
+  const { site } = useWebBuilder();
+  const { colors, fonts, accentColor } = useCraftTheme();
+  const isDark = pageSurfaceToneFromBackground(getCraftSurfaceBgHex(surface, site?.theme)) === 'dark';
+
+  const textPrimary = isDark ? colors.darkPrimaryText : colors.mainText;
+  const textSecondary = isDark ? colors.darkSecondaryText : colors.secondaryText;
+  const borderColor = isDark
+    ? `color-mix(in srgb, ${colors.darkPrimaryText} 12%, transparent)`
+    : `color-mix(in srgb, ${colors.mainText} 12%, transparent)`;
+
+  return { colors, fonts, accentColor, borderColor, textPrimary, textSecondary, isDark };
 }
 
 export function craftSurfaceBg(surface: CraftSurface, colors: ReturnType<typeof useCraftTheme>['colors']) {
@@ -54,7 +84,8 @@ export function CraftSection({
   bordered?: boolean;
   containerClassName?: string;
 }) {
-  const { colors, accentColor, borderColor } = useCraftTheme();
+  const { colors, accentColor } = useCraftTheme();
+  const { textPrimary, borderColor: surfaceBorderColor } = useCraftSurfaceContrast(surface);
 
   return (
     <section
@@ -66,8 +97,8 @@ export function CraftSection({
       )}
       style={{
         backgroundColor: craftSurfaceBg(surface, colors),
-        borderColor,
-        color: colors.mainText,
+        borderColor: surfaceBorderColor,
+        color: textPrimary,
         fontFamily: 'var(--wb-body-font, inherit)',
       }}
     >

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo } from 'react';
 import { useWebBuilder } from '@/app/providers/WebBuilderProvider';
+import { colorContrastRatio } from '@/app/lib/utils';
 
 interface ThemeFontWrapperProps {
   children: React.ReactNode;
@@ -43,15 +44,26 @@ export const ThemeFontWrapper: React.FC<ThemeFontWrapperProps> = ({ children }) 
       // Text colors
       if (theme.lightPrimaryColor) styles['--wb-text-main'] = theme.lightPrimaryColor;
       if (theme.lightSecondaryColor) styles['--wb-text-secondary'] = theme.lightSecondaryColor;
-      if (theme.textOnDarkColor) styles['--wb-text-on-dark'] = theme.textOnDarkColor;
-      else if (theme.darkPrimaryColor) styles['--wb-text-on-dark'] = theme.darkPrimaryColor;
-      else if (theme.lightPrimaryColor) styles['--wb-text-on-dark'] = theme.lightPrimaryColor;
-      if (theme.textOnDarkSecondaryColor) {
-        styles['--wb-text-on-dark-secondary'] = theme.textOnDarkSecondaryColor;
-      } else if (theme.darkSecondaryColor) {
-        styles['--wb-text-on-dark-secondary'] = theme.darkSecondaryColor;
-      } else if (theme.lightSecondaryColor) {
-        styles['--wb-text-on-dark-secondary'] = theme.lightSecondaryColor;
+
+      const textOnDark =
+        theme.textOnDarkColor || theme.darkPrimaryColor || theme.mainTextColor || theme.lightPrimaryColor;
+      if (textOnDark) styles['--wb-text-on-dark'] = textOnDark;
+
+      const darkSurfaceBg =
+        theme.sectionBackgroundColorDark || theme.sectionBackgroundColorLight || theme.pageBackgroundColor;
+      const onDarkSecondaryCandidates = [
+        theme.textOnDarkSecondaryColor,
+        theme.darkSecondaryColor,
+        theme.secondaryTextColor,
+        theme.lightSecondaryColor,
+      ];
+      const textOnDarkSecondary = onDarkSecondaryCandidates.find((color) => {
+        if (!color?.trim()) return false;
+        if (!darkSurfaceBg?.trim()) return true;
+        return colorContrastRatio(darkSurfaceBg, color) >= 3;
+      });
+      if (textOnDarkSecondary) {
+        styles['--wb-text-on-dark-secondary'] = textOnDarkSecondary;
       }
 
       // Primary UI Colors (Buttons etc)
